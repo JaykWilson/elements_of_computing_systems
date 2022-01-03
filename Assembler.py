@@ -5,46 +5,138 @@
 # “Programming is the art of telling another human being what one wants the computer to do.”
 # ― Donald Ervin Knuth
 
+import argparse
 
 class Assembler:
 
+	def __init__(self):
+		parser = argparse.ArgumentParser()
+		parser.add_argument('--file', type=str, required=True)
+		args = parser.parse_args()
+		self.functionName = args.file.split(".")[:1]
 
-	def __init__(self,data):
-		self.assemblyFile = data
+		with open(args.file) as originalFile:
+			f = originalFile.read()
+		self.assemblyFile = f
+
 		#Initialize symbolTable with pre-defined symbols
-		symbolTable = {'SCREEN':16384, 'KBD':24576, 'SP':0, 'LCL':1, 'ARG':2, 'THIS':3, 'THAT':4}
+		self.symbolTable = {'SCREEN':16384, 'KBD':24576, 'SP':0, 'LCL':1, 'ARG':2, 'THIS':3, 'THAT':4}
+
+		self.binFile = []
+
+		self.destCommandList = {'':'000','M':'001','D':'010','DM':'011','A':'100','AM':'101','AD':'110','ADM':'111'}
+
+		#comp bits are of the form acccccc whereby the a bit selects between passing the A or M register to the ALU and the cccccc bits represent the actual operation to perform. 
+		self.compCommandList = {'':'','0':'0101010','1':'0111111','-1':'0111010','D':'0001100','A':'0110000','M':'1110000','!D':'0001101','!A':'0110001','!M':'1110001','-D':'0001111','-A':'0110011','-M':'1110011','D+1':'0011111',
+								'A+1':'0110111','M+1':'1110111','D-1':'0001110','A-1':'0110010','M-1':'1110010','D+A':'0000010','D+M':'1000010','D-A':'0010011','D-M':'1010011','A-D':'0000111','M-D':'1000111','D&A':'0000000',
+								'D&M':'1000000','D|A':'0010101','D|M':'0010101'}
+
+		self.jumpCommandList = {'':'000','JGT':'001','JEQ':'010','JGE':'011','JLT':'100','JNE':'101','JLE':'110','JMP':'111'}
 
 		for i in range(16):
 			temp = "R" + str(i)
-			symbolTable[temp] = i
+			self.symbolTable[temp] = i
 
-		print(symbolTable)
+		self.commands = []
+
 
 	def tokenize(self):
-		commands = self.assemblyFile.split('\n')
-		for i, command in enumerate(commands):
-			command = command.replace(" ","")
-			print(i,command)
+		self.commands = self.assemblyFile.split('\n')
+		tempList = []
+		for i, command in enumerate(self.commands):
+			self.commands[i] = command.replace(" ","")
+			if command == '\n' or command  == '':
+				pass
+			elif command[:2] == "//":
+				pass
+			else:
+				tempList.append(command)
+		self.commands = tempList
+
 
 	def parseVarsandLabels(self):
-		
+		varChecker = []
+		for i, command in enumerate(self.commands):
+			firstChar = command[0]
 
+			if firstChar == '(':
+				lastChar = command[-1]
+				labelName = command[1:len(command)-1]
+				
+				if lastChar == ')':
+					if labelName not in self.symbolTable:
+						self.symbolTable[labelName] = i
+						if labelName in varChecker:
+							varChecker.remove(labelName)
+					else:
+						print("Error: only one declaration of label allowed")
+				else:
+					print("Error: improper formatting; missing ')'")
 
+			elif firstChar == '@':
 
+				labelName = command[1:len(command)]
 
-data = '''@7
-M = D + 1
-(LOOP)
-@5
-D = A
-M = D + 5
-@sum
-D;JNE
-@LOOP'''
+				if labelName not in self.symbolTable and not labelName.isnumeric() :
+					varChecker.append(labelName)
 
-x = Assembler(data)
-x.tokenize()
-x.parseVarsandLabels()
+		for i, var in enumerate(varChecker):
+			self.symbolTable[var] = 16 + i
+
+	def convertToBinary(self):
+		for i, command in enumerate(self.commands):
+			destCommand = ''
+			compCommand = ''
+			jumpCommand = ''
+			firstChar = command[0]
+
+			if firstChar != '(':
+				if firstChar =='@':
+					#A INSTRUCTION
+					labelName = command[1:len(command)]
+					if labelName.isnumeric():
+						aInstruction = '0' + str(format(int(labelName),'015b'))
+						self.binFile.append(aInstruction)
+					else:
+						aInstruction = '0' + str(format(self.symbolTable[labelName],'015b'))
+						self.binFile.append(aInstruction)
+				else:
+					#C INSTRUCTION
+					if '=' in command:
+						destCommand = command[:command.index('=')]
+
+						if destCommand not in self.destCommandList:
+							print("Error: destination command syntax not recognized")
+
+						compCommand = command[command.index('=') + 1 :]
+						if ';' in compCommand:
+							compCommand = compCommand[: compCommand.index(';')]
+
+						if compCommand not in self.compCommandList:
+							print("Error: comp command syntax not recognized")
+
+					if ';' in command:
+						jumpCommand = command[command.index(';') + 1 :]
+						#HANDLE SITUATION WHERE THERE IS NOT AN '=' BUT IS A COMPUTATION
+						if '=' not in command:
+							compCommand = command[:command.index(';')]
+
+					cInstruction = '111' + self.compCommandList[compCommand] + self.destCommandList[destCommand] + self.jumpCommandList[jumpCommand]
+					self.binFile.append(cInstruction)
+
+	def writeBinaryFile(self):
+		binFileName = self.functionName[0] + ".hack"
+		with open(binFileName, 'w') as f:
+			for line in self.binFile:
+				f.write(line)
+				f.write("\n")
+
+#MAIN CODE
+hackAssembler = Assembler()
+hackAssembler.tokenize()
+hackAssembler.parseVarsandLabels()
+hackAssembler.convertToBinary()
+hackAssembler.writeBinaryFile()
 
 
 #implementation notes:
