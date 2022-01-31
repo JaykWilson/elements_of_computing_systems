@@ -3,7 +3,8 @@ import argparse
 class Assembler:
 
 	def __init__(self):
-
+		self.bin_file = []
+		self.commands = []
 		parser = argparse.ArgumentParser()
 		parser.add_argument('--file', type=str, required=True)
 		args = parser.parse_args()
@@ -14,69 +15,64 @@ class Assembler:
 		self.assembly_file = f
 
 		self.symbol_table = {'SCREEN':16384, 
-							'KBD':24576, 
-							'SP':0, 
-							'LCL':1, 
-							'ARG':2, 
-							'THIS':3, 
-							'THAT':4}
+				     'KBD':24576, 
+				     'SP':0, 
+				     'LCL':1, 
+				     'ARG':2, 
+				     'THIS':3, 
+				     'THAT':4}
 
 		self.dest_command_list = {'':'000',
-								'M':'001',
-								'D':'010',
-								'DM':'011',
-								'A':'100',
-								'AM':'101',
-								'AD':'110',
-								'ADM':'111'}
+					  'M':'001',
+					  'D':'010',
+					  'DM':'011',
+					  'A':'100',
+					  'AM':'101',
+					  'AD':'110',
+					  'ADM':'111'}
 
 		self.comp_command_list = {'':'',
-								'0':'0101010',
-								'1':'0111111',
-								'-1':'0111010',
-								'D':'0001100',
-								'A':'0110000',
-								'M':'1110000',
-								'!D':'0001101',
-								'!A':'0110001',
-								'!M':'1110001',
-								'-D':'0001111',
-								'-A':'0110011',
-								'-M':'1110011',
-								'D+1':'0011111',
-								'A+1':'0110111',
-								'M+1':'1110111',
-								'D-1':'0001110',
-								'A-1':'0110010',
-								'M-1':'1110010',
-								'D+A':'0000010',
-								'D+M':'1000010',
-								'D-A':'0010011',
-								'D-M':'1010011',
-								'A-D':'0000111',
-								'M-D':'1000111',
-								'D&A':'0000000',
-								'D&M':'1000000',
-								'D|A':'0010101',
-								'D|M':'1010101'}
+					  '0':'0101010',
+					  '1':'0111111',
+					  '-1':'0111010',
+					  'D':'0001100',
+					  'A':'0110000',
+					  'M':'1110000',
+					  '!D':'0001101',
+					  '!A':'0110001',
+					  '!M':'1110001',
+					  '-D':'0001111',
+					  '-A':'0110011',
+					  '-M':'1110011',
+					  'D+1':'0011111',
+					  'A+1':'0110111',
+					  'M+1':'1110111',
+					  'D-1':'0001110',
+					  'A-1':'0110010',
+					  'M-1':'1110010',
+					  'D+A':'0000010',
+					  'D+M':'1000010',
+					  'D-A':'0010011',
+					  'D-M':'1010011',
+					  'A-D':'0000111',
+					  'M-D':'1000111',
+					  'D&A':'0000000',
+					  'D&M':'1000000',
+					  'D|A':'0010101',
+					  'D|M':'1010101'}
 
 		self.jump_command_list = {'':'000',
-								'JGT':'001',
-								'JEQ':'010',
-								'JGE':'011',
-								'JLT':'100',
-								'JNE':'101',
-								'JLE':'110',
-								'JMP':'111'}
+					  'JGT':'001',
+					  'JEQ':'010',
+					  'JGE':'011',
+					  'JLT':'100',
+					  'JNE':'101',
+					  'JLE':'110',
+					  'JMP':'111'}
 
 		for i in range(16):
 			temp = "R" + str(i)
 			self.symbol_table[temp] = i
-
-		self.bin_file = []
-		
-		self.commands = []
-
 
 	def tokenize(self):
 		# this function parses out the command list into individual commands,
@@ -97,7 +93,6 @@ class Assembler:
 			else:
 				temp_list.append(command)
 		self.commands = temp_list
-
 
 	def parse_possible_variables_and_labels(self):
 		# this function uses the two pass method for differentiating between
@@ -129,7 +124,7 @@ class Assembler:
 				#change name of possible_variables to possibly a variable
 				if label_name not in self.symbol_table and not label_name.isnumeric() and label_name not in possible_variables:
 					possible_variables.append(label_name)
-		# variables are stored in RAM[16] forth
+		# variables are stored starting at RAM[16]
 		for i, var in enumerate(possible_variables):
 			self.symbol_table[var] = 16 + i
 
@@ -170,7 +165,8 @@ class Assembler:
 						jump_command = command[command.index(';') + 1 :]
 						if '=' not in command:
 							comp_command = command[:command.index(';')]
-					c_instruction = '111' + self.comp_command_list[comp_command] + self.dest_command_list[dest_command] + self.jump_command_list[jump_command]
+					c_instruction = '111' + self.comp_command_list[comp_command] + self.dest_command_list[dest_command] 
+							+ self.jump_command_list[jump_command]
 					self.bin_file.append(c_instruction)
 
 	def write_binary_file(self):
