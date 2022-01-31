@@ -3,194 +3,194 @@ import os
 
 class Parser:
 	arithmetic_commands_template = {'add':['@SP',
-										'AM=M-1',
-										'D=M',
-										'@SP',
-										'AM=M-1',
-										'MD=D+M',
-										'@SP',
-										'M=M+1'],
+					       'AM=M-1',
+					       'D=M',
+					       '@SP',
+					       'AM=M-1',
+					       'MD=D+M',
+					       '@SP',
+					       'M=M+1'],
 
-								'sub':[ '@SP',
-										'AM=M-1',
-										'D=M',
-										'@SP',
-										'AM=M-1',
-										'MD=M-D',
-										'@SP',
-										'M=M+1'],
+					'sub':[ '@SP',
+						'AM=M-1',
+						'D=M',
+						'@SP',
+						'AM=M-1',
+						'MD=M-D',
+						'@SP',
+						'M=M+1'],
 
-								'neg':[ '@SP',
-										'AM=M-1',
-										'D=M',
-										'@insert_neg_temp_var',
-										'M=D',
-										'@0',
-										'D=A',
-										'@SP',
-										'A=M',
-										'M=D',
-										'@SP',
-										'M=M+1',
-										'@insert_neg_temp_var',
-										'D=M',
-										'@SP',
-										'A=M',
-										'M=D',
-										'@SP',
-										'M=M+1',
-										'insert_sub_commands',],
+					'neg':[ '@SP',
+						'AM=M-1',
+						'D=M',
+						'@insert_neg_temp_var',
+						'M=D',
+						'@0',
+						'D=A',
+						'@SP',
+						'A=M',
+						'M=D',
+						'@SP',
+						'M=M+1',
+						'@insert_neg_temp_var',
+						'D=M',
+						'@SP',
+						'A=M',
+						'M=D',
+						'@SP',
+						'M=M+1',
+						'insert_sub_commands',],
 
-								'rel':[ 'insert_sub_commands',
-										'@SP',
-										'AM=M-1',
-										'D=M',
-										'@replace_relation_true',
-										'D;replace_relation_specific_jump_command',
-										'@replace_relation_false',
-										'0;JMP',
-										'(replace_relation_true)',
-										'@0',
-										'D=A-1',
-										'@SP',
-										'A=M',
-										'M=D',
-										'@SP',
-										'M=M+1',
-										'@END',
-										'0;JMP',
-										'(replace_relation_false)',
-										'@0',
-										'D=A',
-										'@SP',
-										'A=M',
-										'M=D',
-										'@SP',
-										'M=M+1',
-										'(END)',],
+					'rel':[ 'insert_sub_commands',
+						'@SP',
+						'AM=M-1',
+						'D=M',
+						'@replace_relation_true',
+						'D;replace_relation_specific_jump_command',
+						'@replace_relation_false',
+						'0;JMP',
+						'(replace_relation_true)',
+						'@0',
+						'D=A-1',
+						'@SP',
+						'A=M',
+						'M=D',
+						'@SP',
+						'M=M+1',
+						'@END',
+						'0;JMP',
+						'(replace_relation_false)',
+						'@0',
+						'D=A',
+						'@SP',
+						'A=M',
+						'M=D',
+						'@SP',
+						'M=M+1',
+						'(END)',],
 
-								'and':[ '@SP',
-										'AM=M-1',
-										'M=D',
-										'@SP',
-										'AM=M-1',
-										'M=D&M',
-										'@SP',
-										'M=M+1',],
+					'and':[ '@SP',
+						'AM=M-1',
+						'M=D',
+						'@SP',
+						'AM=M-1',
+						'M=D&M',
+						'@SP',
+						'M=M+1',],
 
-								'or':[ '@SP',
-										'AM=M-1',
-										'M=D',
-										'@SP',
-										'AM=M-1',
-										'M=D|M',
-										'@SP',
-										'M=M+1',],
-								'not':[ '@SP',
-										'AM=M-1',
-										'M=!M',
-										'@SP',
-										'M=M+1',],
-								#gt, let, eq commands handled by 'rel' above
-								'gt':'NULL',
-								'lt':'NULL',
-								'eq':'NULL',
-								}
+					'or':[ '@SP',
+					       'AM=M-1',
+					       'M=D',
+					       '@SP',
+					       'AM=M-1',
+					       'M=D|M',
+					       '@SP',
+					       'M=M+1',],
+					'not':[ '@SP',
+						'AM=M-1',
+						'M=!M',
+						'@SP',
+						'M=M+1',],
+					#gt, let, eq commands handled by 'rel' above
+					'gt':'NULL',
+					'lt':'NULL',
+					'eq':'NULL',
+					}
 
 	push_data_from_address_template = ['@replace_segment_pointer',
-										'D=M',
-										'@i',
-										'D=D+A',
-										'A=D',
-										'D=M',
-										]
+					   'D=M',
+					   '@i',
+					   'D=D+A',
+					   'A=D',
+					   'D=M',
+					   ]
 
 	push_data_to_stack_commands = ['@SP',
-									'A=M',
-									'M=D',
-									'@SP',
-									'M=M+1',
-									]
+				       'A=M',
+				       'M=D',
+				       '@SP',
+				       'M=M+1',
+				       ]
 
 	pop_data_from_stack_commands = ['@SP',
-									'AM=M-1',
-									'D=M',
-									]
+					'AM=M-1',
+					'D=M',
+					]
 
 	pop_memory_command_template = ['@replace_segment_pointer',
-									'D=M',
-									'@i',
-									'D=D+A',
-									'@address',
-									'M=D',
-									'@SP',
-									'AM=M-1',
-									'D=M',
-									'@address',
-									'A=M',
-									'M=D',
-									]
+				       'D=M',
+				       '@i',
+				       'D=D+A',
+				       '@address',
+				       'M=D',
+				       '@SP',
+				       'AM=M-1',
+				       'D=M',
+				       '@address',
+				       'A=M',
+				       'M=D',
+					]
 
 	function_return_commands = [# endFrame = LCL
-								'@LCL',
-								'D=M',
-								'@R13',
-								'M=D',
-								# retAddr = *(endFrame - 5)
-								'@5',
-								'D=A',
-								'@R13',
-								'A=M-D',
-								'D=M',
-								'@R14',
-								'M=D',
-								# *ARG = pop()
-								'@SP',
-								'AM=M-1',
-								'D=M',
-								'@ARG',
-								'A=M',
-								'M=D',
-								# SP = ARG + 1
-								'@ARG',
-								'D=M+1',
-								'@SP',
-								'M=D',
-								# THAT = *(endFrame -1)
-								'@R13',
-								'A=M-1',
-								'D=M',
-								'@THAT',
-								'M=D',
-								# THIS = *(endFrame -2)
-								'@2',
-								'D=A',
-								'@R13',
-								'A=M-D',
-								'D=M',
-								'@THIS',
-								'M=D',
-								# ARG = *(endFrame -3)
-								'@3',
-								'D=A',
-								'@R13',
-								'A=M-D',
-								'D=M',
-								'@ARG',
-								'M=D',
-								# LCL = *(endFrame - 4)
-								'@4',
-								'D=A',
-								'@R13',
-								'A=M-D',
-								'D=M',
-								'@LCL',
-								'M=D',
-								# goto retAddr
-								'@R14',
-								'A=M',
-								'0;JMP',
-								]
+				   '@LCL',
+				   'D=M',
+				   '@R13',
+				   'M=D',
+				   # retAddr = *(endFrame - 5)
+				   '@5',
+				   'D=A',
+				   '@R13',
+				   'A=M-D',
+				   'D=M',
+				   '@R14',
+				   'M=D',
+				   # *ARG = pop()
+				   '@SP',
+				   'AM=M-1',
+				   'D=M',
+				   '@ARG',
+				   'A=M',
+				   'M=D',
+				   # SP = ARG + 1
+				   '@ARG',
+				   'D=M+1',
+				   '@SP',
+				   'M=D',
+				   # THAT = *(endFrame -1)
+				   '@R13',
+				   'A=M-1',
+				   'D=M',
+				   '@THAT',
+				   'M=D',
+				   # THIS = *(endFrame -2)
+				   '@2',
+				   'D=A',
+				   '@R13',
+				   'A=M-D',
+				   'D=M',
+				   '@THIS',
+				   'M=D',
+				   # ARG = *(endFrame -3)
+				   '@3',
+				   'D=A',
+				   '@R13',
+				   'A=M-D',
+				   'D=M',
+				   '@ARG',
+				   'M=D',
+				   # LCL = *(endFrame - 4)
+				   '@4',
+				   'D=A',
+				   '@R13',
+				   'A=M-D',
+				   'D=M',
+				   '@LCL',
+				   'M=D',
+				   # goto retAddr
+				   '@R14',
+				   'A=M',
+				   '0;JMP',
+				   ]
 
 	def set_raw_commands(self,raw_commands):
 		self.commands = raw_commands
@@ -237,16 +237,20 @@ class Translator:
 		relational_commands = Parser.arithmetic_commands_template['sub'] + relational_commands
 		for i in range(len(relational_commands)):
 			if 'replace_relation_specific_jump_command' in relational_commands[i]: 
-				relational_commands[i] = relational_commands[i].replace('replace_relation_specific_jump_command',Translator.relational_jump_command[comparison])
+				relational_commands[i] = relational_commands[i].replace('replace_relation_specific_jump_command'
+											,Translator.relational_jump_command[comparison])
 
 			if 'replace_relation_true' in relational_commands[i]:
-				relational_commands[i] = relational_commands[i].replace('replace_relation_true', comparison + '_true_' + str(Translator.unique_label_counter[comparison]))
+				relational_commands[i] = relational_commands[i].replace('replace_relation_true', comparison + '_true_' 
+											+ str(Translator.unique_label_counter[comparison]))
 
 			if 'replace_relation_false' in relational_commands[i]:
-				relational_commands[i] = relational_commands[i].replace('replace_relation_false', comparison + '_false_' + str(Translator.unique_label_counter[comparison]))
+				relational_commands[i] = relational_commands[i].replace('replace_relation_false', comparison + '_false_' 
+											+ str(Translator.unique_label_counter[comparison]))
 
 			if 'END' in relational_commands[i]:
-				relational_commands[i] = relational_commands[i].replace('END', comparison + '_end_' + str(Translator.unique_label_counter[comparison]))
+				relational_commands[i] = relational_commands[i].replace('END', comparison + '_end_' 
+											+ str(Translator.unique_label_counter[comparison]))
 		return relational_commands
 
 	def _get_add_command():
@@ -286,7 +290,9 @@ class Translator:
 	def set_vm_file_name(self,vm_file_name):
 		self.vm_file_name = vm_file_name.split('.')[0]
 
-	_get_arithmetic_commands = {"add": _get_add_command,'sub': _get_sub_command,'gt': _get_gt_command,'lt': _get_lt_command,'eq': _get_eq_command,'neg': _get_neg_command,'and': _get_and_command,'or': _get_or_command, 'not': _get_not_command}
+	_get_arithmetic_commands = {"add": _get_add_command,'sub': _get_sub_command,'gt': _get_gt_command,'lt': _get_lt_command
+				    ,'eq': _get_eq_command,'neg': _get_neg_command,'and': _get_and_command,'or': _get_or_command
+				    , 'not': _get_not_command}
 
 	def _write_comment_and_commands_to_file(self,file,assembly_command_list,comment):
 		file.write(comment)
@@ -381,7 +387,8 @@ class Translator:
 		elif virtual_segment == 'static':
 			write_command_list = ['@' + self.vm_file_name + '.' + str(index),'M=D']
 		elif virtual_segment == 'temp':
-			write_command_list = ['@5','D=A','@' + str(index),'D=D+A','@popaddress' + str(Translator.pop_address_counter),'M=D','@SP','AM=M-1','D=M','@popaddress' + str(Translator.pop_address_counter),'A=M','M=D']
+			write_command_list = ['@5','D=A','@' + str(index),'D=D+A','@popaddress' + str(Translator.pop_address_counter)
+					      ,'M=D','@SP','AM=M-1','D=M','@popaddress' + str(Translator.pop_address_counter),'A=M','M=D']
 		elif virtual_segment == 'pointer':
 			write_command_list = ['@THIS' if index == '0' else '@THAT','M=D']
 		else:
