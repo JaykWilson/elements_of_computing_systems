@@ -214,10 +214,11 @@ class Parser:
 
 
 class Translator:
-	unique_label_counter = {'gt':0,'lt':0,'eq':0,'neg':0}
 	pop_address_counter = 0
+	function_count = 0
+	unique_label_counter = {'gt':0,'lt':0,'eq':0,'neg':0}
 	relational_jump_command = {'gt':'JGT','lt':'JLT','eq':'JEQ'}
-
+	
 	def __init__(self,add_bootstrap,file):
 		# bootstrap code is not used when translating a single vm file
 		# as it's assumed not needed
@@ -420,8 +421,6 @@ class Translator:
 		assembly_command_comment = '//' + command + ' ' + label
 		Translator._write_comment_and_commands_to_file(file,assembly_command_list,assembly_command_comment)
 
-	function_count = 0
-
 	def write_function_to_file(self,full_command,file):
 		parsed_command_list = full_command.split(' ')
 		command = parsed_command_list[0]
@@ -461,7 +460,6 @@ class Translator:
 
 # MAIN
 input_arg = sys.argv[1]
-
 if os.path.isdir(input_arg):
 	output_file_name = os.path.basename(input_arg) + '.asm'
 	directory_contents = os.listdir(input_arg)
@@ -474,7 +472,7 @@ elif os.path.isfile(input_arg):
 	os.chdir(os.path.dirname(input_arg))
 	add_bootstrap = False
 else:
-	print('Director or File not recognized')
+	print('Directory or File not recognized')
 	sys.exit()
 
 Parser = Parser()
