@@ -1,7 +1,7 @@
 # Nand2Tetris
 Code for The Elements of Computing Systems: Building a Modern Computer from First Principles, aka Nand2Tetris
 
-Nand2Tetris is an ambitious course that builds a complete computer virtually starting with only nand gates; creates gates such as and,or,not,mux; using those gates to create adders, an ALU, program counter, RAM, register, CPU; creates an assembler to convert assembly language to binary; creates a virtual machine to convert stack based virtual machine  commands in assembly; creates a compiler for a high level language based on Java into stack based virtual machine code; and creates an OS.
+Nand2Tetris is an ambitious course that builds a complete computer virtually starting with only nand gates; creates gates such as and, or, not, mux; uses those gates to create adders, an ALU, program counter, RAM, register, CPU; creates an assembler to convert assembly language to binary; creates a virtual machine to convert stack based virtual machine  commands in assembly; creates a compiler for a high level language based on Java into stack based virtual machine code; and creates an OS.
 
 The course content can be downloaded from https://www.nand2tetris.org on the "software" page. 
 
