@@ -1,163 +1,188 @@
-#This python program is an assembler for the Hack assembly language from The Elements of Computing Systems: Building a Modern Computer from First Principles aka Nand2Tetris
-#https://www.nand2tetris.org/
-#Programmer: Jayk Wilson
-#Random inspirational quote....
-# “Programming is the art of telling another human being what one wants the computer to do.”
-# ― Donald Ervin Knuth
-
 import argparse
 
 class Assembler:
 
 	def __init__(self):
+
 		parser = argparse.ArgumentParser()
 		parser.add_argument('--file', type=str, required=True)
 		args = parser.parse_args()
-		self.functionName = args.file.split(".")[:1]
+		self.function_name = args.file.split(".")[:1]
 
-		with open(args.file) as originalFile:
-			f = originalFile.read()
-		self.assemblyFile = f
+		with open(args.file) as original_file:
+			f = original_file.read()
+		self.assembly_file = f
 
-		#Initialize symbolTable with pre-defined symbols
-		self.symbolTable = {'SCREEN':16384, 'KBD':24576, 'SP':0, 'LCL':1, 'ARG':2, 'THIS':3, 'THAT':4}
+		self.symbol_table = {'SCREEN':16384, 
+							'KBD':24576, 
+							'SP':0, 
+							'LCL':1, 
+							'ARG':2, 
+							'THIS':3, 
+							'THAT':4}
 
-		self.binFile = []
+		self.dest_command_list = {'':'000',
+								'M':'001',
+								'D':'010',
+								'DM':'011',
+								'A':'100',
+								'AM':'101',
+								'AD':'110',
+								'ADM':'111'}
 
-		self.destCommandList = {'':'000','M':'001','D':'010','DM':'011','A':'100','AM':'101','AD':'110','ADM':'111'}
+		self.comp_command_list = {'':'',
+								'0':'0101010',
+								'1':'0111111',
+								'-1':'0111010',
+								'D':'0001100',
+								'A':'0110000',
+								'M':'1110000',
+								'!D':'0001101',
+								'!A':'0110001',
+								'!M':'1110001',
+								'-D':'0001111',
+								'-A':'0110011',
+								'-M':'1110011',
+								'D+1':'0011111',
+								'A+1':'0110111',
+								'M+1':'1110111',
+								'D-1':'0001110',
+								'A-1':'0110010',
+								'M-1':'1110010',
+								'D+A':'0000010',
+								'D+M':'1000010',
+								'D-A':'0010011',
+								'D-M':'1010011',
+								'A-D':'0000111',
+								'M-D':'1000111',
+								'D&A':'0000000',
+								'D&M':'1000000',
+								'D|A':'0010101',
+								'D|M':'1010101'}
 
-		#comp bits are of the form acccccc whereby the a bit selects between passing the A or M register to the ALU and the cccccc bits represent the actual operation to perform. 
-		self.compCommandList = {'':'','0':'0101010','1':'0111111','-1':'0111010','D':'0001100','A':'0110000','M':'1110000','!D':'0001101','!A':'0110001','!M':'1110001','-D':'0001111','-A':'0110011','-M':'1110011','D+1':'0011111',
-								'A+1':'0110111','M+1':'1110111','D-1':'0001110','A-1':'0110010','M-1':'1110010','D+A':'0000010','D+M':'1000010','D-A':'0010011','D-M':'1010011','A-D':'0000111','M-D':'1000111','D&A':'0000000',
-								'D&M':'1000000','D|A':'0010101','D|M':'0010101'}
-
-		self.jumpCommandList = {'':'000','JGT':'001','JEQ':'010','JGE':'011','JLT':'100','JNE':'101','JLE':'110','JMP':'111'}
+		self.jump_command_list = {'':'000',
+								'JGT':'001',
+								'JEQ':'010',
+								'JGE':'011',
+								'JLT':'100',
+								'JNE':'101',
+								'JLE':'110',
+								'JMP':'111'}
 
 		for i in range(16):
 			temp = "R" + str(i)
-			self.symbolTable[temp] = i
+			self.symbol_table[temp] = i
 
+		self.bin_file = []
+		
 		self.commands = []
 
 
 	def tokenize(self):
-		self.commands = self.assemblyFile.split('\n')
-		tempList = []
+		# this function parses out the command list into individual commands,
+		# removes tabs, removes whitespace, removes blank lines, 
+		# removes comments and creates a new list of cleaned commands
+		self.commands = self.assembly_file.split('\n')
+		temp_list = []
 		for i, command in enumerate(self.commands):
-			self.commands[i] = command.replace(" ","")
+			self.commands[i] = command.replace("   ","")
+			command = command.replace(" ","")
 			if command == '\n' or command  == '':
 				pass
 			elif command[:2] == "//":
 				pass
+			elif "//" in command:
+				command = command.split("//")[0]
+				temp_list.append(command)
 			else:
-				tempList.append(command)
-		self.commands = tempList
+				temp_list.append(command)
+		self.commands = temp_list
 
 
-	def parseVarsandLabels(self):
-		varChecker = []
+	def parse_possible_variables_and_labels(self):
+		# this function uses the two pass method for differentiating between
+		# variables and labels. variables are of the form "@variable_name"
+		# while labels (or goto statements) are of the form "@label_name"
+		# but also have a corresponding goto location of the form "(label_name)"
+		# since either the label name in parentheses or command to jump there may
+		# be seen first, we aren't sure until we've parsed the entire file whether 
+		# a command starting with a "@" denotes a jump-to-label or variable command
+		possible_variables = []
+		num_label_lorrection = 0
 		for i, command in enumerate(self.commands):
-			firstChar = command[0]
-
-			if firstChar == '(':
-				lastChar = command[-1]
-				labelName = command[1:len(command)-1]
-				
-				if lastChar == ')':
-					if labelName not in self.symbolTable:
-						self.symbolTable[labelName] = i
-						if labelName in varChecker:
-							varChecker.remove(labelName)
+			first_char = command[0]
+			if first_char == '(':
+				last_char = command[-1]
+				label_name = command[1:len(command)-1]
+				if last_char == ')':
+					if label_name not in self.symbol_table:
+						self.symbol_table[label_name] = i - num_label_lorrection
+						num_label_lorrection += 1
+						if label_name in possible_variables:
+							possible_variables.remove(label_name)
 					else:
 						print("Error: only one declaration of label allowed")
 				else:
 					print("Error: improper formatting; missing ')'")
+			elif first_char == '@':
+				label_name = command[1:len(command)]
+				#change name of possible_variables to possibly a variable
+				if label_name not in self.symbol_table and not label_name.isnumeric() and label_name not in possible_variables:
+					possible_variables.append(label_name)
+		# variables are stored in RAM[16] forth
+		for i, var in enumerate(possible_variables):
+			self.symbol_table[var] = 16 + i
 
-			elif firstChar == '@':
-
-				labelName = command[1:len(command)]
-
-				if labelName not in self.symbolTable and not labelName.isnumeric() :
-					varChecker.append(labelName)
-
-		for i, var in enumerate(varChecker):
-			self.symbolTable[var] = 16 + i
-
-	def convertToBinary(self):
+	def convert_to_binary(self):
 		for i, command in enumerate(self.commands):
-			destCommand = ''
-			compCommand = ''
-			jumpCommand = ''
-			firstChar = command[0]
-
-			if firstChar != '(':
-				if firstChar =='@':
-					#A INSTRUCTION
-					labelName = command[1:len(command)]
-					if labelName.isnumeric():
-						aInstruction = '0' + str(format(int(labelName),'015b'))
-						self.binFile.append(aInstruction)
+			dest_command = ''
+			comp_command = ''
+			jump_command = ''
+			first_char = command[0]
+			# commands that are enclosed in parantheses are just labels so they are ignored when converting to binary
+			if first_char == '(':
+				continue
+			else:
+				if first_char =='@':
+					# A INSTRUCTION
+					label_name = command[1:len(command)]
+					#a_instructions with numeric values are translated into binary directly 
+					if label_name.isnumeric():
+						a_instruction = '0' + str(format(int(label_name),'015b'))
+						self.bin_file.append(a_instruction)
 					else:
-						aInstruction = '0' + str(format(self.symbolTable[labelName],'015b'))
-						self.binFile.append(aInstruction)
+						# a_instructions that are not numeric values represent variables
+						a_instruction = '0' + str(format(self.symbol_table[label_name],'015b'))
+						self.bin_file.append(a_instruction)
 				else:
 					#C INSTRUCTION
 					if '=' in command:
-						destCommand = command[:command.index('=')]
-
-						if destCommand not in self.destCommandList:
+						dest_command = command[:command.index('=')]
+						dest_command = ''.join(sorted(dest_command))
+						if dest_command not in self.dest_command_list:
 							print("Error: destination command syntax not recognized")
-
-						compCommand = command[command.index('=') + 1 :]
-						if ';' in compCommand:
-							compCommand = compCommand[: compCommand.index(';')]
-
-						if compCommand not in self.compCommandList:
+						comp_command = command[command.index('=') + 1 :]
+						if ';' in comp_command:
+							comp_command = comp_command[: comp_command.index(';')]
+						if comp_command not in self.comp_command_list:
 							print("Error: comp command syntax not recognized")
-
 					if ';' in command:
-						jumpCommand = command[command.index(';') + 1 :]
-						#HANDLE SITUATION WHERE THERE IS NOT AN '=' BUT IS A COMPUTATION
+						jump_command = command[command.index(';') + 1 :]
 						if '=' not in command:
-							compCommand = command[:command.index(';')]
+							comp_command = command[:command.index(';')]
+					c_instruction = '111' + self.comp_command_list[comp_command] + self.dest_command_list[dest_command] + self.jump_command_list[jump_command]
+					self.bin_file.append(c_instruction)
 
-					cInstruction = '111' + self.compCommandList[compCommand] + self.destCommandList[destCommand] + self.jumpCommandList[jumpCommand]
-					self.binFile.append(cInstruction)
-
-	def writeBinaryFile(self):
-		binFileName = self.functionName[0] + ".hack"
-		with open(binFileName, 'w') as f:
-			for line in self.binFile:
+	def write_binary_file(self):
+		bin_file_name = self.function_name[0] + ".hack"
+		with open(bin_file_name, 'w') as f:
+			for line in self.bin_file:
 				f.write(line)
 				f.write("\n")
 
 #MAIN CODE
 hackAssembler = Assembler()
 hackAssembler.tokenize()
-hackAssembler.parseVarsandLabels()
-hackAssembler.convertToBinary()
-hackAssembler.writeBinaryFile()
-
-
-#implementation notes:
-#STEP 0: Constructor initialize
-#Create symbol table(dictionary type), populate with keywords
-
-#STEP 1: Tokenize
-#break file into a list of strings based on line (EOL delimiter)
-#remove all white spaces 
-
-#STEP 2: Complete symbol table
-# Iterate through command list 
-#if first letter of string == '(', check if following string already exists in symbol map(dictionary) before creating new item, then create add string to hash map where value is set to 0, if string exists multiply value by -1 to indicate a label was found
-#if first letter of string == @ and following characters represent a string, check if the string exists in the hash map,  if value is greater than 0  increment value and move on, if value is 0, increment and replace with location of ( from symbol
-#	if value is -1 decrement to keep track of how many varibles without label name exist
-#if first letter of string ==@ and name doesn't exist already initialized to zero, add with value -1
-#after iterating through the file, iterate through the hash map for any keys that have negative values, create variables in hashmap for those strings and then replace string with address
-#add all lines with commands added to symbol table to linesConverted list, which will be used to remove from a ranged list for all lines to skip those lines when going through on a second pass
-
-#STEP 3: parse through the list for a second time to convert commands to A or C instructions
-#if command[0](first letter) == '@' process A instruction via convertAInstruction()
-#if command[0] == 'M, D, A, 0, 1, -, !, process C instruction via convertCInstruction()
-
-#STEP 4 print list of binary commands to txt file located in same directory as the executable
+hackAssembler.parse_possible_variables_and_labels()
+hackAssembler.convert_to_binary()
+hackAssembler.write_binary_file()
