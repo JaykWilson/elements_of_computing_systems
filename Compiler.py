@@ -5,6 +5,7 @@ import SymbolTableList
 
 
 class Tokenizer:
+
 	keyword_list = ['class', 
 					'constructor', 
 					'function', 
@@ -27,6 +28,7 @@ class Tokenizer:
 					'while',
 					'return',
 					]
+
 
 	symbol_list = ['{',
 				   '}',
@@ -55,11 +57,13 @@ class Tokenizer:
 	accumulating_string_constant = False
 	reserved_XML_symbol_replacements = {'>' : '&gt;', '<' : '&lt;', '&' : '&amp;', '"' : '&quot;'}
 
+
 	def set_raw_code(self, raw_code):
 		self.raw_code = raw_code
 		Tokenizer.identifier_list.clear()
 		Tokenizer.block_comment = False
 		Tokenizer.accumulating_string_constant = False
+
 
 	def tokenize(self):
 		verified_tokens_xml = []
@@ -83,6 +87,7 @@ class Tokenizer:
 			return Tokenizer.reserved_XML_symbol_replacements[token]
 		else:
 			return token
+
 
 	def _process_tokens_in_line(self,line):
 		processed_line = []
@@ -191,6 +196,7 @@ class CompilationEngine:
 	tokenized_xml = []
 	token_iterator = 0
 	indents = 0
+	class_name = ""
 
 	op_list = ['+',
 			   '-',
@@ -213,7 +219,10 @@ class CompilationEngine:
 						 'this',
 						 ]
 
-	class_symbol_table = SymbolTableList.SymbolTable()
+	#symbols are stored in a linked list of tables for every scope from class level to methods
+	#nested scope is handled by creating an additional table/node of the list at the head
+	symbol_tables = LinkedList()
+
 
 	def format_scoped_structure(self, token):
 		func = CompilationEngine.functions[token]
@@ -234,17 +243,20 @@ class CompilationEngine:
 		CompilationEngine.token_iterator += 1
 		return current_token_xml
 
+
 	def peek_current_token(self):
 		token_xml_split = CompilationEngine.tokenized_xml[CompilationEngine.token_iterator].split()
 		token_type = token_xml_split[0][1:-1]
 		token = token_xml_split[1]
 		return token
 
+
 	def peek_current_type(self):
 		token_xml_split = CompilationEngine.tokenized_xml[CompilationEngine.token_iterator].split()
 		token_type = token_xml_split[0][1:-1]
 		token = token_xml_split[1]
 		return token_type
+
 
 	def peek_next_token(self):
 		if CompilationEngine.token_iterator < len(CompilationEngine.tokenized_xml) - 1:
@@ -255,6 +267,7 @@ class CompilationEngine:
 		else:
 			raise Exception("Syntax error: out of bounds check")
 
+
 	def write_compiled_xml(self,current_token_xml):
 		indent = ""
 		for i in range(CompilationEngine.indents):
@@ -262,10 +275,12 @@ class CompilationEngine:
 		current_token_xml = indent + current_token_xml
 		CompilationEngine.compiled_xml.append(current_token_xml)
 
+
 	def set_verified_xml_tokens(self,verified_tokens_xml):
 		CompilationEngine.compiled_xml.clear()
 		CompilationEngine.tokenized_xml.clear()
 		CompilationEngine.tokenized_xml = verified_tokens_xml
+
 
 	def expect_token(self, expected_token):
 		current_token = CompilationEngine.peek_current_token()
@@ -274,12 +289,14 @@ class CompilationEngine:
 		else:
 			raise Exception("syntax error: missing expected token")
 
+
 	def expect_token_type(self, expected_type):
 		current_token_type = CompilationEngine.peek_current_type()
 		if current_token_type == expected_type:
 			CompilationEngine.write_compiled_xml(CompilationEngine.pop_token())
 		else:
 			raise Exception("syntax error: invalid type")
+
 
 	def optional_token(self, optional_token):
 		current_token = CompilationEngine.peek_current_token()
@@ -289,37 +306,36 @@ class CompilationEngine:
 		else: 
 			return False
 
+
 	def compile_class_var_dec():
-
-		#WRITE TO CLASS SYMBOL TABLE
-
-		symbol_kind = CompilationEngine.peek_current_token()
-		CompilationEngine.write_compiled_xml(CompilationEngine.pop_token()) #pop kind (static | field)
-
+		symbol_kind = CompilationEngine.peek_current_token()                
+		CompilationEngine.write_compiled_xml(CompilationEngine.pop_token())                         # pop kind (static | field)
 		symbol_type = CompilationEngine.peek_current_token()
-		CompilationEngine.write_compiled_xml(CompilationEngine.pop_token()) #pop type
-
+		CompilationEngine.write_compiled_xml(CompilationEngine.pop_token())                         # pop type
 		symbol_name = CompilationEngine.peek_current_token()
-		CompilationEngine.write_compiled_xml(CompilationEngine.pop_token()) #pop varName
-
-		class_symbol_table.add_symbol(symbol_name, symbol_type, symbol_kind)
+		CompilationEngine.write_compiled_xml(CompilationEngine.pop_token())                         # pop varName
+		CompilationEngine.symbol_tables.add_class_symbol(symbol_name, symbol_type, symbol_kind)     # add symbol to symbol table
 		while CompilationEngine.optional_token(",") == True:
 			symbol_name = CompilationEngine.peek_current_token()
-			class_symbol_table.add_symbol(symbol_name, symbol_type, symbol_kind)
+			CompilationEngine.symbol_tables.add_class_symbol(symbol_name, symbol_type, symbol_kind) # add symbol to symbol table
 			CompilationEngine.write_compiled_xml(CompilationEngine.pop_token()) # pop varName
-
 		CompilationEngine.expect_token(";")
 		return
 
 
 	def compile_subroutine_dec():
-		CompilationEngine.write_compiled_xml(CompilationEngine.pop_token()) #pop (constructor | function | method)
-		CompilationEngine.write_compiled_xml(CompilationEngine.pop_token()) #pop return type
-		CompilationEngine.write_compiled_xml(CompilationEngine.pop_token()) #pop method name
+		CompilationEngine.symbol_tables.add_table()                         # init new symbol table for method's locals
+		func_type = CompilationEngine.peek_current_token()
+		if func_type == "method":
+			CompilationEngine.symbol_tables.add_class_symbol("this", CompilationEngine.class_name, "argument") # add "this" pointer for all methods to refer to object
+		CompilationEngine.write_compiled_xml(CompilationEngine.pop_token()) # pop (constructor | function | method)
+		CompilationEngine.write_compiled_xml(CompilationEngine.pop_token()) # pop return type
+		CompilationEngine.write_compiled_xml(CompilationEngine.pop_token()) # pop method name
 		CompilationEngine.expect_token("(")
 		CompilationEngine.format_scoped_structure("parameterList")()
 		CompilationEngine.expect_token(")")
 		CompilationEngine.format_scoped_structure("subroutineBody")()
+		CompilationEngine.reset_subroutine_tables()
 		return
 
 
@@ -327,11 +343,17 @@ class CompilationEngine:
 		if CompilationEngine.peek_current_token() == ")":
 			return #this case handles an empty parameter list
 		else:
-			CompilationEngine.write_compiled_xml(CompilationEngine.pop_token()) # pop type
-			CompilationEngine.write_compiled_xml(CompilationEngine.pop_token()) # pop varName
+			symbol_type = CompilationEngine.peek_current_token()
+			CompilationEngine.write_compiled_xml(CompilationEngine.pop_token())                            # pop type
+			symbol_name = CompilationEngine.peek_current_token()
+			CompilationEngine.write_compiled_xml(CompilationEngine.pop_token())                            # pop varName
+			CompilationEngine.symbol_tables.add_class_symbol(symbol_name, symbol_type, "argument")         # add symbol to symbol table
 			while CompilationEngine.optional_token(",") == True:
+				symbol_type = CompilationEngine.peek_current_token()
 				CompilationEngine.write_compiled_xml(CompilationEngine.pop_token()) # pop type
+				symbol_name = CompilationEngine.peek_current_token()
 				CompilationEngine.write_compiled_xml(CompilationEngine.pop_token()) # pop varName
+				CompilationEngine.symbol_tables.add_class_symbol(symbol_name, symbol_type, "argument")     # add symbol to symbol table
 			return
 
 
@@ -350,14 +372,19 @@ class CompilationEngine:
 
 	def compile_var_dec():
 		CompilationEngine.write_compiled_xml(CompilationEngine.pop_token()) # pop "var"
+		symbol_type = CompilationEngine.peek_current_token()
 		CompilationEngine.write_compiled_xml(CompilationEngine.pop_token()) # pop type
+		symbol_name = CompilationEngine.peek_current_token()
 		CompilationEngine.write_compiled_xml(CompilationEngine.pop_token()) # pop varName
+		CompilationEngine.symbol_tables.add_subroutine_symbol(symbol_name, symbol_type, "local") # add symbol to symbol table
 		while CompilationEngine.optional_token(",") == True:
+			symbol_name = CompilationEngine.peek_current_token()
 			CompilationEngine.write_compiled_xml(CompilationEngine.pop_token()) # pop varName
+			CompilationEngine.symbol_tables.add_subroutine_symbol(symbol_name, symbol_type, "local") # add symbol to symbol table
 		CompilationEngine.expect_token(";")
 		return
 
-	
+	#ADD SYMBOL TABLE TRAVERSAL LOGIC IN LET
 	def compile_let():
 		CompilationEngine.write_compiled_xml(CompilationEngine.pop_token()) #pop "let"
 		CompilationEngine.write_compiled_xml(CompilationEngine.pop_token()) #pop "varName
@@ -410,9 +437,6 @@ class CompilationEngine:
 
 
 	def subroutine_call(self):
-
-		#RESET SUBROUTINE SYMBOL TABLE
-
 		next_token = CompilationEngine.peek_next_token()
 		#subroutine call, via class member access operator
 		if next_token == ".":
@@ -521,11 +545,14 @@ class CompilationEngine:
 
 		while CompilationEngine.optional_token(",") == True:
 			CompilationEngine.format_scoped_structure("expression")()
-
 		return
 
-	def compile_class():		
+
+	def compile_class():
+		#add first table which will store class scoped symbols
+		CompilationEngine.symbol_tables.add_table()		
 		CompilationEngine.write_compiled_xml(CompilationEngine.pop_token()) #pop "class"
+		CompilationEngine.class_name = CompilationEngine.peek_current_token()
 		CompilationEngine.write_compiled_xml(CompilationEngine.pop_token()) #pop className
 		CompilationEngine.expect_token("{")
 		current_token = CompilationEngine.peek_current_token()
@@ -552,7 +579,7 @@ class CompilationEngine:
 	def compile(self):
 		#each line is a unique symbol
 		#check if symbol is in compilation_engine_functions dictionary
-		#	if it is, set tag name to the func tag name, print, call compile statement, it's return
+		# if it is, set tag name to the func tag name, print, call compile statement, it's return
 		# CompilationEngine.init_functions_dict()
 		while(CompilationEngine.token_iterator < len(CompilationEngine.tokenized_xml)):
 			current_token = CompilationEngine.peek_current_token()

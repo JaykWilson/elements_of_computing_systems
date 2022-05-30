@@ -12,6 +12,14 @@ class LinkedList:
 		argument_num = 0
 		local_num = 0
 
+		#scope_num is used by the subroutine symbol tables to keep track of how many
+		#levels of nested scope a particular variable/symbol is encountered in
+		#the reason for keeping track of it within the symbol table is to check
+		#if the scope number aka levels of nested scope of existing symbols in the 
+		#head table are equal to the scope of a newly encountered symbol. If the scope
+		#of the head table is different, a new table must be created for a new scope
+		scope_num = 0
+
 
 		def __init__(self):
 			self.name = []
@@ -19,7 +27,7 @@ class LinkedList:
 			self.kind = []
 			self.num = []
 		
-		
+
 		def increment_num(self,kind):
 			if kind == "field":
 				self.field_num += 1
@@ -102,7 +110,7 @@ class LinkedList:
 				n = n.next
 
 
-	def reset_subroutine_nodes(self):
+	def reset_subroutine_tables(self):
 		if self.head is None:
 			print("no symbol tables")
 		else:
