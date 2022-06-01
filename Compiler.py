@@ -200,7 +200,6 @@ class VmWriter:
 		elif OP == "-":
 			self.vm_commands.append("-")
 		elif OP == "/":
-			command = "call Math.divide 2"
 			self.vm_commands.append("call Math.divide 2")
 		elif OP == "*":
 			self.vm_commands.append("call Math.multiply 2")
