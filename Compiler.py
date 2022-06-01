@@ -190,6 +190,48 @@ class Tokenizer:
 					Tokenizer.identifier_list.append(possible_token)
 			return 'identifier'
 
+class VmWriter:
+
+	vm_commands = []
+
+	def write_arithmetic(self, OP):
+		if OP == "+":
+			self.vm_commands.append("+")
+		elif OP == "-":
+			self.vm_commands.append("-")
+		elif OP == "/":
+			command = "call Math.divide 2"
+			self.vm_commands.append("call Math.divide 2")
+		elif OP == "*":
+			self.vm_commands.append("call Math.multiply 2")
+		elif OP == "&":
+			self.vm.commands.append("&")
+		elif OP == "|":
+			self.vm.commands.append("|")
+		elif OP == ">":
+			self.vm_commands.append("gt")
+		elif OP == "<":
+			self.vm_commands.append("lt")
+		elif OP == "=":
+			self.vm_commands.append("eq")
+
+
+	# def write_call(self, call, symbol):
+	# 	commands = Math.divide(2)
+
+	def write_push(self, symbol):
+		if symbol == "-1":
+			vm_commands.append("1")
+			vm_commands.append("neg")
+		else:
+			command = "push " + symbol
+			vm_commands.append(symbol)
+
+
+	def write_pop(self, symbol):
+		command = "pop " + symbol
+		vm_commands.append(symbol)
+
 
 class CompilationEngine:
 	compiled_xml = []
@@ -221,7 +263,8 @@ class CompilationEngine:
 
 	#symbols are stored in a linked list of tables for every scope from class level to methods
 	#nested scope is handled by creating an additional table/node of the list at the head
-	symbol_tables = LinkedList()
+	symbol_tables = SymbolTableList.LinkedList()
+	vm_writer = VmWriter()
 
 
 	def format_scoped_structure(self, token):
@@ -327,7 +370,7 @@ class CompilationEngine:
 		CompilationEngine.symbol_tables.add_table()                         # init new symbol table for method's locals
 		func_type = CompilationEngine.peek_current_token()
 		if func_type == "method":
-			CompilationEngine.symbol_tables.add_class_symbol("this", CompilationEngine.class_name, "argument") # add "this" pointer for all methods to refer to object
+			CompilationEngine.symbol_tables.add_subroutine_symbol("this", CompilationEngine.class_name, "argument") # add "this" pointer for all methods to refer to object
 		CompilationEngine.write_compiled_xml(CompilationEngine.pop_token()) # pop (constructor | function | method)
 		CompilationEngine.write_compiled_xml(CompilationEngine.pop_token()) # pop return type
 		CompilationEngine.write_compiled_xml(CompilationEngine.pop_token()) # pop method name
@@ -335,7 +378,9 @@ class CompilationEngine:
 		CompilationEngine.format_scoped_structure("parameterList")()
 		CompilationEngine.expect_token(")")
 		CompilationEngine.format_scoped_structure("subroutineBody")()
-		CompilationEngine.reset_subroutine_tables()
+		CompilationEngine.symbol_tables.print_list()
+		# CompilationEngine.symbol_tables.print_class()
+		CompilationEngine.symbol_tables.reset_subroutine_tables()
 		return
 
 
@@ -347,13 +392,13 @@ class CompilationEngine:
 			CompilationEngine.write_compiled_xml(CompilationEngine.pop_token())                            # pop type
 			symbol_name = CompilationEngine.peek_current_token()
 			CompilationEngine.write_compiled_xml(CompilationEngine.pop_token())                            # pop varName
-			CompilationEngine.symbol_tables.add_class_symbol(symbol_name, symbol_type, "argument")         # add symbol to symbol table
+			CompilationEngine.symbol_tables.add_subroutine_symbol(symbol_name, symbol_type, "argument")         # add symbol to symbol table
 			while CompilationEngine.optional_token(",") == True:
 				symbol_type = CompilationEngine.peek_current_token()
 				CompilationEngine.write_compiled_xml(CompilationEngine.pop_token()) # pop type
 				symbol_name = CompilationEngine.peek_current_token()
 				CompilationEngine.write_compiled_xml(CompilationEngine.pop_token()) # pop varName
-				CompilationEngine.symbol_tables.add_class_symbol(symbol_name, symbol_type, "argument")     # add symbol to symbol table
+				CompilationEngine.symbol_tables.add_subroutine_symbol(symbol_name, symbol_type, "argument")     # add symbol to symbol table
 			return
 
 
@@ -478,9 +523,17 @@ class CompilationEngine:
 	
 	def compile_expression():
 		CompilationEngine.format_scoped_structure("term")()
-		if CompilationEngine.peek_current_token() in CompilationEngine.op_list:
+		operator_found = False
+		operator = ""
+		current_token = CompilationEngine.peek_current_token()
+		if current_token in CompilationEngine.op_list:
+			operator_found = True
+			operator = current_token
 			CompilationEngine.write_compiled_xml(CompilationEngine.pop_token()) #pop op token
 			CompilationEngine.format_scoped_structure("term")()
+
+		if operator_found == True:
+			self.vm_writer.write_arithmetic(operator)
 
 
 	def compile_term():
@@ -490,17 +543,24 @@ class CompilationEngine:
 			return
 		else:
 			next_token = CompilationEngine.peek_next_token()
-			#rray indexing
+			#array indexing
 			if next_token == "[":
+				#INTEGRATE VM WRITE FOR ARRAY INDEXING
+				array_name = CompilationEngine.peek_current_token()
+				self.vm_commands.write_push(array_name)
 				CompilationEngine.write_compiled_xml(CompilationEngine.pop_token()) #pop varName
 				CompilationEngine.write_compiled_xml(CompilationEngine.pop_token()) #pop "["
 				CompilationEngine.format_scoped_structure("expression")()
 				current_token = CompilationEngine.peek_current_token()
 				if current_token == "]":
 					CompilationEngine.write_compiled_xml(CompilationEngine.pop_token())
+					self.vm_commands.write_arithmetic("+")
+					self.vm_commands.write_pop("pointer 1")
+					self.vm_commands.write_push("that 0")
 					return
 			#subroutine call
 			elif next_token == "." or next_token == "(":
+				#INTEGRATE VM WRITE FOR FUNCTION CALL
 				CompilationEngine.subroutine_call()
 				return
 
@@ -510,6 +570,31 @@ class CompilationEngine:
 				or current_token_type == 'stringConstant' 
 				or current_token_type == 'identifier'
 				or current_token in CompilationEngine.keyword_constants):
+				#INTEGRATE VM WRITE
+				if current_token_type = 'integerConstant':
+					self.vm_writer.write_push(current_token)
+				elif current_token_type == 'stringConstant':
+					#UPDATE FIRST ARG
+					self.vm_writer.write_call('String.new(length)', current_token)
+
+				elif current_token_type == "identifier":
+					if CompilationEngine.symbol_tables.has_symbol(current_token) == True:
+						kind = CompilationEngine.symbol_tables.get_kind(current_token)
+						num = CompilationEngine.symbol_tables.get_num(current_token)
+						command = ""
+						if kind == "field":
+							command = "this " + num
+						else:
+							command = kind + " " + num
+						self.vm_commands.write_push(command)
+
+				elif current_token in CompilationEngine.keyword_constants:
+					if current_token == "false" or current_token == "null":
+						self.vm_commands.write_push("0")
+					if current_token == "true":
+						self.vm_commands.write_push("-1")
+					if current_token == 'this':
+						self.vm_commands.write_push("this 0")
 
 				CompilationEngine.write_compiled_xml(CompilationEngine.pop_token())
 				return
