@@ -54,6 +54,9 @@ class LinkedList:
 				self.num.append(self.local_num)
 			self.increment_num(kind)
 
+		def find_symbol(self, name):
+			return name in self.name
+
 
 		def get_kind(self, name):
 			idx = self.name.index(name)
@@ -63,16 +66,6 @@ class LinkedList:
 		def get_num(self, name):
 			idx = self.name.index(name)
 			return self.num[idx]
-
-		# def reset_table(self):
-		# 	self.name.clear()
-		# 	self.symbol_type.clear()
-		# 	self.kind.clear()
-		# 	self.num.clear()
-		# 	self.field_num = 0
-		# 	self.static_num = 0
-		# 	self.argument_num = 0
-		# 	self.local_num = 0
 
 
 		def print_table(self):
@@ -114,10 +107,27 @@ class LinkedList:
 		else:
 			n = self.head
 			while n is not None:
-				if n.data.find_symbol() == True:
+				if n.data.find_symbol(symbol) == True:
 					return True
 				n = n.next
 			return False
+
+
+	def get_segment(self, symbol):
+		if self.head is None:
+			print("no symbol tables")
+			return
+		else:
+			n = self.head
+			while n is not None:
+				if n.data.find_symbol(symbol) == True:
+					kind = n.data.get_kind(symbol)
+					num = str(n.data.get_num(symbol))
+					return kind + " " + num
+				n = n.next
+
+			if n == None:
+				raise Exception("symbol not found in symbol tables")
 
 
 	def get_kind(self, name):
@@ -127,8 +137,12 @@ class LinkedList:
 		else:
 			n = self.head
 			while n is not None:
-				if n.data.find_symbol() == True:
-					return n.get_kind(name)
+				if n.data.find_symbol(name) == True:
+					return n.data.get_kind(name)
+				n = n.next
+
+			if n == None:
+				raise Exception("symbol not found in symbol tables")
 		
 
 	def get_num(self, name):
@@ -138,8 +152,12 @@ class LinkedList:
 		else:
 			n = self.head
 			while n is not None:
-				if n.data.find_symbol() == True:
-					return n.get_num(name)
+				if n.data.find_symbol(name) == True:
+					return n.data.get_num(name)
+				n = n.next
+
+			if n == None:
+				raise Exception("symbol not found in symbol tables")
 
 
 	def reset_subroutine_tables(self):

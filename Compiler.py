@@ -196,9 +196,9 @@ class VmWriter:
 
 	def write_arithmetic(self, OP):
 		if OP == "+":
-			self.vm_commands.append("+")
+			self.vm_commands.append("add")
 		elif OP == "-":
-			self.vm_commands.append("-")
+			self.vm_commands.append("sub")
 		elif OP == "/":
 			self.vm_commands.append("call Math.divide 2")
 		elif OP == "*":
@@ -220,16 +220,19 @@ class VmWriter:
 
 	def write_push(self, symbol):
 		if symbol == "-1":
-			vm_commands.append("1")
-			vm_commands.append("neg")
+			self.vm_commands.append("push 1")
+			self.vm_commands.append("neg")
 		else:
 			command = "push " + symbol
-			vm_commands.append(symbol)
+			self.vm_commands.append(command)
 
 
 	def write_pop(self, symbol):
 		command = "pop " + symbol
-		vm_commands.append(symbol)
+		self.vm_commands.append(command)
+
+	def print_vm_commands(self):
+		print(self.vm_commands)
 
 
 class CompilationEngine:
@@ -377,7 +380,7 @@ class CompilationEngine:
 		CompilationEngine.format_scoped_structure("parameterList")()
 		CompilationEngine.expect_token(")")
 		CompilationEngine.format_scoped_structure("subroutineBody")()
-		CompilationEngine.symbol_tables.print_list()
+		# CompilationEngine.symbol_tables.print_list()
 		# CompilationEngine.symbol_tables.print_class()
 		CompilationEngine.symbol_tables.reset_subroutine_tables()
 		return
@@ -431,6 +434,7 @@ class CompilationEngine:
 	#ADD SYMBOL TABLE TRAVERSAL LOGIC IN LET
 	def compile_let():
 		CompilationEngine.write_compiled_xml(CompilationEngine.pop_token()) #pop "let"
+		var_name = CompilationEngine.peek_current_token()
 		CompilationEngine.write_compiled_xml(CompilationEngine.pop_token()) #pop "varName
 	
 		if CompilationEngine.optional_token("[") == True:
@@ -445,7 +449,15 @@ class CompilationEngine:
 
 		CompilationEngine.format_scoped_structure("expression")()
 		CompilationEngine.expect_token(";")
-		return
+
+		if CompilationEngine.symbol_tables.has_symbol(var_name):
+			seg_pointer = CompilationEngine.symbol_tables.get_segment(var_name)
+			CompilationEngine.vm_writer.write_pop(seg_pointer)                  #store evaluated expression into variable
+			return
+		else:
+			raise Exception("variable segment not found in symbol table")
+
+		
 
 
 	def compile_if():
@@ -532,7 +544,7 @@ class CompilationEngine:
 			CompilationEngine.format_scoped_structure("term")()
 
 		if operator_found == True:
-			self.vm_writer.write_arithmetic(operator)
+			CompilationEngine.vm_writer.write_arithmetic(operator)
 
 
 	def compile_term():
@@ -546,20 +558,20 @@ class CompilationEngine:
 			if next_token == "[":
 				#INTEGRATE VM WRITE FOR ARRAY INDEXING
 				array_name = CompilationEngine.peek_current_token()
-				self.vm_commands.write_push(array_name)
+				CompilationEngine.vm_writer.write_push(array_name)
 				CompilationEngine.write_compiled_xml(CompilationEngine.pop_token()) #pop varName
 				CompilationEngine.write_compiled_xml(CompilationEngine.pop_token()) #pop "["
 				CompilationEngine.format_scoped_structure("expression")()
 				current_token = CompilationEngine.peek_current_token()
 				if current_token == "]":
 					CompilationEngine.write_compiled_xml(CompilationEngine.pop_token())
-					self.vm_commands.write_arithmetic("+")
-					self.vm_commands.write_pop("pointer 1")
-					self.vm_commands.write_push("that 0")
+					CompilationEngine.vm_writer.write_arithmetic("+")
+					CompilationEngine.vm_writer.write_pop("pointer 1")
+					CompilationEngine.vm_writer.write_push("that 0")
 					return
 			#subroutine call
 			elif next_token == "." or next_token == "(":
-				#INTEGRATE VM WRITE FOR FUNCTION CALL
+				#INTEGRATE VM WRITE FOR METHOD/SUBROUTINE CALL
 				CompilationEngine.subroutine_call()
 				return
 
@@ -570,30 +582,30 @@ class CompilationEngine:
 				or current_token_type == 'identifier'
 				or current_token in CompilationEngine.keyword_constants):
 				#INTEGRATE VM WRITE
-				if current_token_type = 'integerConstant':
-					self.vm_writer.write_push(current_token)
+				if current_token_type == 'integerConstant':
+					CompilationEngine.vm_writer.write_push(current_token)
 				elif current_token_type == 'stringConstant':
 					#UPDATE FIRST ARG
-					self.vm_writer.write_call('String.new(length)', current_token)
+					CompilationEngine.vm_writer.write_call('String.new(length)', current_token)
 
 				elif current_token_type == "identifier":
 					if CompilationEngine.symbol_tables.has_symbol(current_token) == True:
 						kind = CompilationEngine.symbol_tables.get_kind(current_token)
-						num = CompilationEngine.symbol_tables.get_num(current_token)
+						num = str(CompilationEngine.symbol_tables.get_num(current_token))
 						command = ""
 						if kind == "field":
 							command = "this " + num
 						else:
 							command = kind + " " + num
-						self.vm_commands.write_push(command)
+						CompilationEngine.vm_writer.write_push(command)
 
 				elif current_token in CompilationEngine.keyword_constants:
 					if current_token == "false" or current_token == "null":
-						self.vm_commands.write_push("0")
+						CompilationEngine.vm_writer.write_push("0")
 					if current_token == "true":
-						self.vm_commands.write_push("-1")
+						CompilationEngine.vm_writer.write_push("-1")
 					if current_token == 'this':
-						self.vm_commands.write_push("this 0")
+						CompilationEngine.vm_writer.write_push("this 0")
 
 				CompilationEngine.write_compiled_xml(CompilationEngine.pop_token())
 				return
@@ -673,7 +685,7 @@ class CompilationEngine:
 			else:
 				#this may need to be updated with more logic to handle scenarios where scope is defined arbitrarily, may be only circumstance though
 				raise Exception("invalid syntax")
-
+		CompilationEngine.vm_writer.print_vm_commands()
 		return CompilationEngine.compiled_xml
 
 
