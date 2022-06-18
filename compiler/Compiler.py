@@ -51,21 +51,17 @@ class CompilationEngine:
 
 	def pop_token(self):
 		current_token_xml = CompilationEngine.tokenized_xml[CompilationEngine.token_iterator]
-		# print(current_token_xml)
 		CompilationEngine.token_iterator += 1
 		return current_token_xml
 
 
 	def peek_current_token(self):
 		token_xml_split = CompilationEngine.tokenized_xml[CompilationEngine.token_iterator].split()
-		print("NO SPLIT", CompilationEngine.tokenized_xml[CompilationEngine.token_iterator])
-		print("XML SPLIT", token_xml_split)
 		token_type = token_xml_split[0][1:-1]
 		if token_type == "stringConstant":
 			token = ' '.join(token_xml_split[1:-1])
 		else:
 			token = token_xml_split[1]
-		print("TOKEN:", token)
 		return token
 
 
@@ -173,8 +169,6 @@ class CompilationEngine:
 		CompilationEngine.format_scoped_structure("parameterList")()
 		CompilationEngine.expect_token(")")
 		CompilationEngine.format_scoped_structure("subroutineBody")()
-		# CompilationEngine.symbol_tables.print_list()
-		# CompilationEngine.symbol_tables.print_class()
 		
 		nlocals = CompilationEngine.symbol_tables.get_nlocals()
 		if func_type == "constructor":
@@ -214,7 +208,6 @@ class CompilationEngine:
 		CompilationEngine.expect_token("{")
 		current_token = CompilationEngine.peek_current_token()
 		while current_token != "}":
-			print(current_token)
 			if current_token == "var":
 				CompilationEngine.format_scoped_structure("var")()
 			else:
@@ -243,7 +236,6 @@ class CompilationEngine:
 		CompilationEngine.write_compiled_xml(CompilationEngine.pop_token()) #pop "let"
 		var_name = CompilationEngine.peek_current_token()
 		CompilationEngine.write_compiled_xml(CompilationEngine.pop_token()) #pop "varName
-		
 		array_access = False
 		if CompilationEngine.optional_token("[") == True:
 			array_access = True
@@ -259,7 +251,8 @@ class CompilationEngine:
 			CompilationEngine.format_scoped_structure("expression")()
 			CompilationEngine.expect_token(")")
 		else:
-			#This else case may need to be removed/debugged
+			CompilationEngine.format_scoped_structure("expression")()
+		if CompilationEngine.peek_current_token() in CompilationEngine.op_list:
 			CompilationEngine.format_scoped_structure("expression")()
 		CompilationEngine.expect_token(";")
 
@@ -449,9 +442,8 @@ class CompilationEngine:
 					CompilationEngine.vm_writer.write_push("that 0")
 					return
 			#subroutine call (method or function)
-			elif (next_token == "." or next_token == "(") and CompilationEngine.peek_current_token() not in CompilationEngine.unary_list: #UNARY FIX NEEDED
-				print("current token,", CompilationEngine.peek_current_token())
-				print("next token: ", next_token)
+			elif (next_token == "." or next_token == "(") and CompilationEngine.peek_current_token() not in CompilationEngine.unary_list \
+					and CompilationEngine.peek_current_token() not in CompilationEngine.op_list: 
 				CompilationEngine.subroutine_call()
 				return
 
@@ -465,7 +457,6 @@ class CompilationEngine:
 					vm_constant = "constant " + str(current_token)
 					CompilationEngine.vm_writer.write_push(vm_constant)
 				elif current_token_type == 'stringConstant':
-					print("________________CURRENT:", current_token)
 					CompilationEngine.vm_writer.write_string(current_token)
 
 				elif current_token_type == "identifier":

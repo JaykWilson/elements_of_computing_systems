@@ -36,6 +36,7 @@ class VmWriter:
 
 
 	def write_call(self, subroutine):
+		print("____CALL____", subroutine)
 		self.command_count += 1
 		command = "call " + subroutine
 		self.vm_commands.append(command)
@@ -84,10 +85,6 @@ class VmWriter:
 
 	def write_function(self, func_name, nargs):
 		func_idx = len(self.vm_commands) - self.command_count
-		print("func", func_name)
-		print("command_count", self.command_count)
-		print("vm_commands", len(self.vm_commands))
-		print("idx", func_idx)
 		command = "function " + func_name + " " + str(nargs)
 		self.vm_commands.insert(func_idx, command)
 		self.reset_command_counter()

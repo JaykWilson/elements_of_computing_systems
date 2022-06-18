@@ -30,7 +30,6 @@ class LinkedList:
 		def increment_num(self,kind):
 			if kind == "field":
 				self.field_num += 1
-				print("inside increment", self.field_num)
 			elif kind == "static":
 				self.static_num += 1
 			elif kind == "argument":
@@ -53,7 +52,7 @@ class LinkedList:
 			elif kind == "local":
 				self.num.append(self.local_num)
 			self.increment_num(kind)
-			print("name and fieldnum", name, self.field_num)
+
 
 		def find_symbol(self, name):
 			return name in self.name
@@ -81,7 +80,6 @@ class LinkedList:
 
 
 		def get_num_class_field_var(self):
-			print("inside class", self.field_num)
 			return self.field_num
 
 
@@ -131,7 +129,6 @@ class LinkedList:
 
 
 	def get_segment(self, symbol):
-		print("segment symbol",symbol)
 		if self.head is None:
 			print("no symbol tables")
 			return
