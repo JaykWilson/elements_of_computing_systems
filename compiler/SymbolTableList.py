@@ -8,12 +8,11 @@ class LinkedList:
 
 	class SymbolTable:
 
-		#scope_num is used by the subroutine symbol tables to keep track of how many
-		#levels of nested scope a particular variable/symbol has
-		#the reason for keeping track of it within the symbol table is to check
-		#if the scope number/levels of nested scope of existing symbols in the 
-		#head table are equal to the scope of a newly encountered symbol. If the scope
-		#of the head table is different, a new table must be created for a new scope
+		# scope_num is used by the subroutine symbol tables to keep track of how many
+		# levels of nested scope a particular variable/symbol has.
+		# Allows to check if the scope number/levels of nested scope of existing symbols 
+		# in the head table are equal to the scope of a newly encountered symbol. If the scope
+		# of the head table is different, a new table must be created for a new scope
 		scope_num = 0
 
 
@@ -31,6 +30,7 @@ class LinkedList:
 		def increment_num(self,kind):
 			if kind == "field":
 				self.field_num += 1
+				print("inside increment", self.field_num)
 			elif kind == "static":
 				self.static_num += 1
 			elif kind == "argument":
@@ -53,6 +53,7 @@ class LinkedList:
 			elif kind == "local":
 				self.num.append(self.local_num)
 			self.increment_num(kind)
+			print("name and fieldnum", name, self.field_num)
 
 		def find_symbol(self, name):
 			return name in self.name
@@ -67,6 +68,9 @@ class LinkedList:
 			idx = self.name.index(name)
 			return self.num[idx]
 
+		def get_type(self, name):
+			idx = self.name.index(name)
+			return self.symbol_type[idx]
 
 		def get_nargs(self):
 			return self.argument_num
@@ -76,6 +80,11 @@ class LinkedList:
 			return self.local_num
 
 
+		def get_num_class_field_var(self):
+			print("inside class", self.field_num)
+			return self.field_num
+
+
 		def print_table(self):
 			for i in range(len(self.name)):
 				print(self.name[i],self.symbol_type[i],self.kind[i],self.num[i])
@@ -83,7 +92,7 @@ class LinkedList:
 
 	def __init__(self):
 		self.head = None
-		self.class_node = None
+		self.class_head = None
 
 
 	def add_table(self):
@@ -96,12 +105,12 @@ class LinkedList:
 		new_node = self.Node(data)
 		new_node.next = self.head
 		if self.head == None:
-			self.class_node = new_node
+			self.class_head = new_node
 		self.head = new_node
 
 
 	def add_class_symbol(self, name, symbol_type, kind):
-		self.class_node.data.add_symbol(name, symbol_type, kind)
+		self.class_head.data.add_symbol(name, symbol_type, kind)
 
 
 	def add_subroutine_symbol(self, name, symbol_type, kind):
@@ -122,6 +131,7 @@ class LinkedList:
 
 
 	def get_segment(self, symbol):
+		print("segment symbol",symbol)
 		if self.head is None:
 			print("no symbol tables")
 			return
@@ -130,6 +140,8 @@ class LinkedList:
 			while n is not None:
 				if n.data.find_symbol(symbol) == True:
 					kind = n.data.get_kind(symbol)
+					if kind == "field":
+						kind = "this"
 					num = str(n.data.get_num(symbol))
 					return kind + " " + num
 				n = n.next
@@ -168,22 +180,52 @@ class LinkedList:
 				raise Exception("symbol not found in symbol tables")
 
 
+	def get_class(self, name):
+		if self.head is None:
+			print("no symbol tables")
+			return
+		else:
+			n = self.head
+			while n is not None:
+				if n.data.find_symbol(name) == True:
+					return n.data.get_type(name)
+				n = n.next
+			if n == None:
+				raise Exception("symbol not found in symbol tables")
+
+
 	def get_nargs(self):
 		return self.head.data.get_nargs()
 
 	def get_nlocals(self):
 		return self.head.data.get_nlocals()
 
+	def get_num_class_field_var(self):
+		return self.class_head.data.get_num_class_field_var()
+
 
 	def reset_subroutine_tables(self):
 		if self.head is None:
 			print("no symbol tables")
 		else:
-			while self.head is not self.class_node:
+			while self.head is not self.class_head:
 				temp = self.head.next
 				self.head.next = None
 				self.head = temp
-
+	
+	def has_symbol(self, name):
+		if self.head is None:
+			print("no symbol tables")
+			return False
+		else:
+			n = self.head
+			while n is not None:
+				if n.data.find_symbol(name) == True:
+					return True
+				n = n.next
+			if n == None:
+				return False
+		
 
 	def print_list(self):
 		if self.head is None:
@@ -200,12 +242,11 @@ class LinkedList:
 
 
 	def print_class(self):
-		print("class head", self.class_node)
-		n = self.class_node
+		print("class head", self.class_head)
+		n = self.class_head
 		n.data.print_table()
 		nh = self.head
 
-		print("head", self.head)
-		nh.data.print_table()
-		print('\n')
-		
+		# print("head", self.head)
+		# nh.data.print_table()
+		# print('\n')

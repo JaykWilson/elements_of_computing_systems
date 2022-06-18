@@ -45,11 +45,11 @@ class VmWriter:
 		
 		if symbol == "-1":
 			self.command_count += 2
-			self.vm_commands.append("push constant 1")
-			self.vm_commands.append("neg")
+			self.vm_commands.append("push constant 0")
+			self.vm_commands.append("not")
 		else:
 			self.command_count += 1
-			command = "push " + symbol
+			command = "push " + str(symbol)
 			self.vm_commands.append(command)
 
 
@@ -69,14 +69,21 @@ class VmWriter:
 		label = label_type + " " + label_name + str(num)
 		self.vm_commands.append(label)
 
+
+	def reset_command_counter(self):
+		self.command_count = 0
+
+
 	def write_function(self, func_name, nargs):
 		func_idx = len(self.vm_commands) - self.command_count
-		# print("command_count", self.command_count)
-		# print("vm_commands", len(self.vm_commands))
-		# print("idx", func_idx)
+		print("func", func_name)
+		print("command_count", self.command_count)
+		print("vm_commands", len(self.vm_commands))
+		print("idx", func_idx)
 		command = "function " + func_name + " " + str(nargs)
 		self.vm_commands.insert(func_idx, command)
-		self.command_count = 0
+		self.reset_command_counter()
+
 
 	def get_commands(self):
 		return self.vm_commands
@@ -84,4 +91,7 @@ class VmWriter:
 
 	def print_vm_commands(self):
 		print(self.vm_commands)
-		
+
+	def reset(self):
+		self.reset_command_counter()
+		self.vm_commands.clear()
