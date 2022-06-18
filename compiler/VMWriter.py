@@ -69,6 +69,14 @@ class VmWriter:
 		label = label_type + " " + label_name + str(num)
 		self.vm_commands.append(label)
 
+	def write_string(self, string):
+		self.write_push("constant " + str(len(string) + 1))
+		self.write_call("String.new 1")          
+		for c in string:
+			self.write_push("constant " + str(ord(c)))
+			self.command_count += 1
+			self.vm_commands.append("call String.appendChar 2")
+
 
 	def reset_command_counter(self):
 		self.command_count = 0

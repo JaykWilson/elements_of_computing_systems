@@ -51,15 +51,21 @@ class CompilationEngine:
 
 	def pop_token(self):
 		current_token_xml = CompilationEngine.tokenized_xml[CompilationEngine.token_iterator]
-		print(current_token_xml)
+		# print(current_token_xml)
 		CompilationEngine.token_iterator += 1
 		return current_token_xml
 
 
 	def peek_current_token(self):
 		token_xml_split = CompilationEngine.tokenized_xml[CompilationEngine.token_iterator].split()
+		print("NO SPLIT", CompilationEngine.tokenized_xml[CompilationEngine.token_iterator])
+		print("XML SPLIT", token_xml_split)
 		token_type = token_xml_split[0][1:-1]
-		token = token_xml_split[1]
+		if token_type == "stringConstant":
+			token = ' '.join(token_xml_split[1:-1])
+		else:
+			token = token_xml_split[1]
+		print("TOKEN:", token)
 		return token
 
 
@@ -241,7 +247,8 @@ class CompilationEngine:
 		array_access = False
 		if CompilationEngine.optional_token("[") == True:
 			array_access = True
-			CompilationEngine.vm_writer.write_push(var_name)
+			seg_pointer = CompilationEngine.symbol_tables.get_segment(var_name)
+			CompilationEngine.vm_writer.write_push(seg_pointer)
 			CompilationEngine.format_scoped_structure("expression")()
 			CompilationEngine.vm_writer.write_arithmetic("+")
 			CompilationEngine.expect_token("]")
@@ -348,7 +355,6 @@ class CompilationEngine:
 				CompilationEngine.current_func_nargs += 1
 				obj_segment = CompilationEngine.symbol_tables.get_segment(obj)
 				obj_class = CompilationEngine.symbol_tables.get_class(obj)
-				print("OBJ SEG", obj_segment)
 				CompilationEngine.vm_writer.write_push(obj_segment)				# push object memory segment
 				call_name = obj_class + "." + subroutine_name
 			# elif obj in CompilationEngine.OS_classes:
@@ -365,12 +371,6 @@ class CompilationEngine:
 
 			subroutine_call_command = call_name + " " + str(CompilationEngine.current_func_nargs)
 			CompilationEngine.vm_writer.write_call(subroutine_call_command)			# call subroutine
-			#REEANBLE FOR TEMP 0 VOID
-			# if subroutine_name in CompilationEngine.void_functions:
-			# 	CompilationEngine.vm_writer.write_pop("temp 0")
-			# print("sub_name:", subroutine_name)
-			# print("void functions: ")
-			# print(CompilationEngine.void_functions)
 			return
 		#function call
 		elif next_token == "(":
@@ -423,7 +423,6 @@ class CompilationEngine:
 			CompilationEngine.format_scoped_structure("term")()
 
 		if operator_found == True:
-			print("operator: ", operator)
 			CompilationEngine.vm_writer.write_arithmetic(operator)
 
 
@@ -436,8 +435,9 @@ class CompilationEngine:
 			next_token = CompilationEngine.peek_next_token()
 			#array indexing
 			if next_token == "[":
-				array_name = CompilationEngine.peek_current_token()
-				CompilationEngine.vm_writer.write_push(array_name)
+				var_name = CompilationEngine.peek_current_token()
+				seg_pointer = CompilationEngine.symbol_tables.get_segment(var_name)
+				CompilationEngine.vm_writer.write_push(seg_pointer)
 				CompilationEngine.write_compiled_xml(CompilationEngine.pop_token()) #pop varName
 				CompilationEngine.write_compiled_xml(CompilationEngine.pop_token()) #pop "["
 				CompilationEngine.format_scoped_structure("expression")()
@@ -461,16 +461,12 @@ class CompilationEngine:
 				or current_token_type == 'stringConstant' 
 				or current_token_type == 'identifier'
 				or current_token in CompilationEngine.keyword_constants):
-				#INTEGRATE VM WRITE
 				if current_token_type == 'integerConstant':
 					vm_constant = "constant " + str(current_token)
 					CompilationEngine.vm_writer.write_push(vm_constant)
 				elif current_token_type == 'stringConstant':
-					#UPDATE FIRST ARG
-					str_len = len(current_token)
-					#THIS LOGIC LIKELY NOT CORRECT NEEDS TO BE TESTED
-					command = 'String.new(' + str(str_len) + ')'
-					CompilationEngine.vm_writer.write_call(command)
+					print("________________CURRENT:", current_token)
+					CompilationEngine.vm_writer.write_string(current_token)
 
 				elif current_token_type == "identifier":
 					if CompilationEngine.symbol_tables.has_symbol(current_token) == True:
@@ -567,7 +563,6 @@ class CompilationEngine:
 			else:
 				#this may need to be updated with more logic to handle scenarios where scope is defined arbitrarily, may be only circumstance though
 				raise Exception("invalid syntax")
-		CompilationEngine.vm_writer.print_vm_commands()
 		return CompilationEngine.compiled_xml
 
 
