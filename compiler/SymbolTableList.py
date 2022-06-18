@@ -7,12 +7,7 @@ class LinkedList:
 
 
 	class SymbolTable:
-
-		# scope_num is used by the subroutine symbol tables to keep track of how many
-		# levels of nested scope a particular variable/symbol has.
-		# Allows to check if the scope number/levels of nested scope of existing symbols 
-		# in the head table are equal to the scope of a newly encountered symbol. If the scope
-		# of the head table is different, a new table must be created for a new scope
+		# scope_num tracks nested scope
 		scope_num = 0
 
 
@@ -42,7 +37,6 @@ class LinkedList:
 			self.name.append(name)
 			self.symbol_type.append(symbol_type)
 			self.kind.append(kind)
-
 			if kind == "field":
 				self.num.append(self.field_num)
 			elif kind == "static":
@@ -99,7 +93,6 @@ class LinkedList:
 
 
 	def add_node(self, data):
-
 		new_node = self.Node(data)
 		new_node.next = self.head
 		if self.head == None:
@@ -142,7 +135,6 @@ class LinkedList:
 					num = str(n.data.get_num(symbol))
 					return kind + " " + num
 				n = n.next
-
 			if n == None:
 				raise Exception("symbol not found in symbol tables")
 
@@ -172,7 +164,6 @@ class LinkedList:
 				if n.data.find_symbol(name) == True:
 					return n.data.get_num(name)
 				n = n.next
-
 			if n == None:
 				raise Exception("symbol not found in symbol tables")
 
@@ -194,8 +185,10 @@ class LinkedList:
 	def get_nargs(self):
 		return self.head.data.get_nargs()
 
+
 	def get_nlocals(self):
 		return self.head.data.get_nlocals()
+
 
 	def get_num_class_field_var(self):
 		return self.class_head.data.get_num_class_field_var()
@@ -210,6 +203,7 @@ class LinkedList:
 				self.head.next = None
 				self.head = temp
 	
+
 	def has_symbol(self, name):
 		if self.head is None:
 			print("no symbol tables")
@@ -243,7 +237,3 @@ class LinkedList:
 		n = self.class_head
 		n.data.print_table()
 		nh = self.head
-
-		# print("head", self.head)
-		# nh.data.print_table()
-		# print('\n')

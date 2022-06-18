@@ -4,6 +4,7 @@ class VmWriter:
 		self.vm_commands = []
 		self.command_count = 0
 
+
 	def write_arithmetic(self, OP):
 		self.command_count += 1
 		if OP == "+":
@@ -27,6 +28,7 @@ class VmWriter:
 		elif OP == "not":
 			self.vm_commands.append("not")
 	
+
 	def write_unary(self, OP):
 		self.command_count += 1
 		if OP == "~":
@@ -36,14 +38,12 @@ class VmWriter:
 
 
 	def write_call(self, subroutine):
-		print("____CALL____", subroutine)
 		self.command_count += 1
 		command = "call " + subroutine
 		self.vm_commands.append(command)
 
 
 	def write_push(self, symbol):
-		
 		if symbol == "-1":
 			self.command_count += 2
 			self.vm_commands.append("push constant 0")
@@ -69,6 +69,7 @@ class VmWriter:
 		self.command_count += 1
 		label = label_type + " " + label_name + str(num)
 		self.vm_commands.append(label)
+
 
 	def write_string(self, string):
 		self.write_push("constant " + str(len(string) + 1))

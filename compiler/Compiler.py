@@ -4,7 +4,6 @@ import argparse
 import SymbolTableList
 import CompilationTokenizer
 import VMWriter
-import pdb
 
 
 class CompilationEngine:
@@ -139,30 +138,22 @@ class CompilationEngine:
 
 	def compile_subroutine_dec():
 		CompilationEngine.vm_writer.reset_command_counter()
-		CompilationEngine.symbol_tables.add_table()                         # init new symbol table for method's locals
+		CompilationEngine.symbol_tables.add_table()                         														# init new symbol table for method's locals
 
 		func_type = CompilationEngine.peek_current_token()
 		if func_type == "constructor":
-			CompilationEngine.vm_writer.write_push("constant " + str(CompilationEngine.symbol_tables.get_num_class_field_var()))       # push num field vars onto stack for alloc
+			CompilationEngine.vm_writer.write_push("constant " + str(CompilationEngine.symbol_tables.get_num_class_field_var()))    # push num field vars onto stack for alloc
 			CompilationEngine.vm_writer.write_call("Memory.alloc 1")
 			CompilationEngine.vm_writer.write_pop("pointer 0")
 		elif func_type == "method":
-			CompilationEngine.symbol_tables.add_subroutine_symbol("this", CompilationEngine.class_name, "argument") # add "this" pointer for all methods to refer to object
+			CompilationEngine.symbol_tables.add_subroutine_symbol("this", CompilationEngine.class_name, "argument") 				# add "this" pointer for all methods
 			CompilationEngine.vm_writer.write_push("argument 0")
 			CompilationEngine.vm_writer.write_pop("pointer 0")  
 
-		CompilationEngine.write_compiled_xml(CompilationEngine.pop_token()) # pop (constructor | function | method)
+		CompilationEngine.write_compiled_xml(CompilationEngine.pop_token()) 														# pop (constructor | function | method)
+		CompilationEngine.write_compiled_xml(CompilationEngine.pop_token()) 														# pop return type
 
-		# return_type = CompilationEngine.peek_current_token()
-		
-		CompilationEngine.write_compiled_xml(CompilationEngine.pop_token()) # pop return type
-
-		func_name = CompilationEngine.class_name + "." +  CompilationEngine.peek_current_token()   # method name
-
-
-		#POSSIBLY DELETE PRY DONT NEED TO TRACK VOID FUNCTIONS
-		# if return_type == 'void':
-		# 	CompilationEngine.void_functions.append(func_name)
+		func_name = CompilationEngine.class_name + "." +  CompilationEngine.peek_current_token()   									# method name
 
 		CompilationEngine.write_compiled_xml(CompilationEngine.pop_token()) # pop method name
 		CompilationEngine.expect_token("(")
@@ -173,33 +164,29 @@ class CompilationEngine:
 		nlocals = CompilationEngine.symbol_tables.get_nlocals()
 		if func_type == "constructor":
 			CompilationEngine.vm_writer.write_function(func_name, nlocals)
-		elif func_type == "method":
-			# CompilationEngine.symbol_tables.add_subroutine_symbol("this", CompilationEngine.class_name, "argument") # add "this" pointer for all methods to refer to object
-			# CompilationEngine.vm_writer.write_push("argument 0")
-			# CompilationEngine.vm_writer.write_pop("pointer 0")     
+		elif func_type == "method":    
 			CompilationEngine.vm_writer.write_function(func_name, nlocals)                                                 	
 		elif func_type == "function":
 			CompilationEngine.vm_writer.write_function(func_name, nlocals)
 
 		CompilationEngine.symbol_tables.reset_subroutine_tables()
-
 		return
 
 
 	def compile_parameter_list():
 		if CompilationEngine.peek_current_token() == ")":
-			return #this case handles an empty parameter list
+			return 																								# empty parameter list
 		else:
 			symbol_type = CompilationEngine.peek_current_token()
-			CompilationEngine.write_compiled_xml(CompilationEngine.pop_token())                            # pop type
+			CompilationEngine.write_compiled_xml(CompilationEngine.pop_token())                            		# pop type
 			symbol_name = CompilationEngine.peek_current_token()
-			CompilationEngine.write_compiled_xml(CompilationEngine.pop_token())                            # pop varName
-			CompilationEngine.symbol_tables.add_subroutine_symbol(symbol_name, symbol_type, "argument")         # add symbol to symbol table
+			CompilationEngine.write_compiled_xml(CompilationEngine.pop_token())                           		# pop varName
+			CompilationEngine.symbol_tables.add_subroutine_symbol(symbol_name, symbol_type, "argument")    		# add symbol to symbol table
 			while CompilationEngine.optional_token(",") == True:
 				symbol_type = CompilationEngine.peek_current_token()
-				CompilationEngine.write_compiled_xml(CompilationEngine.pop_token()) # pop type
+				CompilationEngine.write_compiled_xml(CompilationEngine.pop_token()) 							# pop type
 				symbol_name = CompilationEngine.peek_current_token()
-				CompilationEngine.write_compiled_xml(CompilationEngine.pop_token()) # pop varName
+				CompilationEngine.write_compiled_xml(CompilationEngine.pop_token()) 							# pop varName
 				CompilationEngine.symbol_tables.add_subroutine_symbol(symbol_name, symbol_type, "argument")     # add symbol to symbol table
 			return
 
@@ -218,24 +205,24 @@ class CompilationEngine:
 
 
 	def compile_var_dec():
-		CompilationEngine.write_compiled_xml(CompilationEngine.pop_token()) # pop "var"
+		CompilationEngine.write_compiled_xml(CompilationEngine.pop_token()) 							# pop "var"
 		symbol_type = CompilationEngine.peek_current_token()
-		CompilationEngine.write_compiled_xml(CompilationEngine.pop_token()) # pop type
+		CompilationEngine.write_compiled_xml(CompilationEngine.pop_token()) 							# pop type
 		symbol_name = CompilationEngine.peek_current_token()
-		CompilationEngine.write_compiled_xml(CompilationEngine.pop_token()) # pop varName
-		CompilationEngine.symbol_tables.add_subroutine_symbol(symbol_name, symbol_type, "local") # add symbol to symbol table
+		CompilationEngine.write_compiled_xml(CompilationEngine.pop_token()) 							# pop varName
+		CompilationEngine.symbol_tables.add_subroutine_symbol(symbol_name, symbol_type, "local") 		# add symbol to symbol table
 		while CompilationEngine.optional_token(",") == True:
 			symbol_name = CompilationEngine.peek_current_token()
-			CompilationEngine.write_compiled_xml(CompilationEngine.pop_token()) # pop varName
-			CompilationEngine.symbol_tables.add_subroutine_symbol(symbol_name, symbol_type, "local") # add symbol to symbol table
+			CompilationEngine.write_compiled_xml(CompilationEngine.pop_token()) 						# pop varName
+			CompilationEngine.symbol_tables.add_subroutine_symbol(symbol_name, symbol_type, "local") 	# add symbol to symbol table
 		CompilationEngine.expect_token(";")
 		return
 
 
 	def compile_let():
-		CompilationEngine.write_compiled_xml(CompilationEngine.pop_token()) #pop "let"
+		CompilationEngine.write_compiled_xml(CompilationEngine.pop_token()) 		#pop "let"
 		var_name = CompilationEngine.peek_current_token()
-		CompilationEngine.write_compiled_xml(CompilationEngine.pop_token()) #pop "varName
+		CompilationEngine.write_compiled_xml(CompilationEngine.pop_token()) 		#pop "varName
 		array_access = False
 		if CompilationEngine.optional_token("[") == True:
 			array_access = True
@@ -264,15 +251,15 @@ class CompilationEngine:
 			return
 		elif CompilationEngine.symbol_tables.has_symbol(var_name):
 			seg_pointer = CompilationEngine.symbol_tables.get_segment(var_name)
-			CompilationEngine.vm_writer.write_pop(seg_pointer)                  # store evaluated expression into variable
+			CompilationEngine.vm_writer.write_pop(seg_pointer)                 	 # store evaluated expression into variable
 			return
 		else:
 			raise Exception("variable segment not found in symbol table")
 
-	#FLOW CONTROL LOGIC MAY BE OFF
+
 	def compile_if():
 		CompilationEngine.if_label_num += 2
-		CompilationEngine.write_compiled_xml(CompilationEngine.pop_token()) # pop "if"
+		CompilationEngine.write_compiled_xml(CompilationEngine.pop_token()) 	# pop "if"
 
 		CompilationEngine.expect_token("(")
 		CompilationEngine.format_scoped_structure("expression")()
@@ -281,7 +268,7 @@ class CompilationEngine:
 
 		L1 = CompilationEngine.if_label_num
 		L2 = CompilationEngine.if_label_num + 1
-		CompilationEngine.vm_writer.write_label("if-goto", "IF_FALSE", L1)               # if not(expression), goto label 1 in the else statement
+		CompilationEngine.vm_writer.write_label("if-goto", "IF_FALSE", L1)      # if not(expression), goto label 1 in the else statement
 
 		CompilationEngine.expect_token("{")
 		CompilationEngine.format_scoped_structure("statements")()
@@ -301,10 +288,10 @@ class CompilationEngine:
 			CompilationEngine.vm_writer.write_label("label", "IF_END", L2)
 			return
 
-	#FIX LABEL NAMING AND ADD NAME ARG TO WRITE_LABEL FUNC
+
 	def compile_while():
 		CompilationEngine.while_label_num += 2
-		CompilationEngine.write_compiled_xml(CompilationEngine.pop_token()) # pop "while"
+		CompilationEngine.write_compiled_xml(CompilationEngine.pop_token()) 	# pop "while"
 
 		L1 = CompilationEngine.while_label_num
 		L2 = CompilationEngine.while_label_num + 1
@@ -327,10 +314,8 @@ class CompilationEngine:
 
 	OS_classes = ['Math', 'Memory', 'Screen', 'Output', 'Keyboard', 'String', 'Array', 'Sys']
 	def subroutine_call(self):
-		#this may need to become a local variable to handle recursive calls to subroutine_call
 		CompilationEngine.current_func_nargs = 0
 		next_token = CompilationEngine.peek_next_token()
-		# object method | OS call | 
 		if next_token == ".":
 			obj = CompilationEngine.peek_current_token()                        # object name | OS Class
 			obj_class = obj														# init object class to object (only true for OS calls)
@@ -339,9 +324,6 @@ class CompilationEngine:
 			CompilationEngine.write_compiled_xml(CompilationEngine.pop_token()) # pop "."
 
 			subroutine_name = CompilationEngine.peek_current_token()			# get subroutine call name
-
-			#NEED TO GET SUBROUTINE TYPE (METHOD/FUNCTION/CONSTRUCTOR)?????
-
 			# object method call
 			call_name = ""
 			if obj not in CompilationEngine.OS_classes and CompilationEngine.symbol_tables.has_symbol(obj):
@@ -350,8 +332,6 @@ class CompilationEngine:
 				obj_class = CompilationEngine.symbol_tables.get_class(obj)
 				CompilationEngine.vm_writer.write_push(obj_segment)				# push object memory segment
 				call_name = obj_class + "." + subroutine_name
-			# elif obj in CompilationEngine.OS_classes:
-			# 	call_name = obj + "." + subroutine_name
 			else:
 				call_name = obj + "." + subroutine_name
 				
@@ -360,10 +340,8 @@ class CompilationEngine:
 			CompilationEngine.format_scoped_structure("expressionList")()       # pushing arguments should be handled by expressionList > expression
 			CompilationEngine.expect_token(")")
 
-			#REEANBLE FOR TEMP 0 VOID???
-
 			subroutine_call_command = call_name + " " + str(CompilationEngine.current_func_nargs)
-			CompilationEngine.vm_writer.write_call(subroutine_call_command)			# call subroutine
+			CompilationEngine.vm_writer.write_call(subroutine_call_command)		# call subroutine
 			return
 		#function call
 		elif next_token == "(":
@@ -391,11 +369,9 @@ class CompilationEngine:
 
 	def compile_return():
 		CompilationEngine.write_compiled_xml(CompilationEngine.pop_token()) # pop "return"
-
 		if CompilationEngine.optional_token(";") == True:
 			CompilationEngine.vm_writer.write_push("constant 0")
 			CompilationEngine.vm_writer.write_return()
-
 			return
 		else:
 			CompilationEngine.format_scoped_structure("expression")()
@@ -414,7 +390,6 @@ class CompilationEngine:
 			operator = current_token
 			CompilationEngine.write_compiled_xml(CompilationEngine.pop_token()) #pop op token
 			CompilationEngine.format_scoped_structure("term")()
-
 		if operator_found == True:
 			CompilationEngine.vm_writer.write_arithmetic(operator)
 
@@ -486,7 +461,6 @@ class CompilationEngine:
 				CompilationEngine.write_compiled_xml(CompilationEngine.pop_token()) #pop unary operator
 				CompilationEngine.format_scoped_structure("term")()
 				CompilationEngine.vm_writer.write_unary(unary_op)
-				# CompilationEngine.write_compiled_xml(CompilationEngine.pop_token()) #pop constant
 				return
 
 			if CompilationEngine.optional_token("(") == True:
@@ -508,7 +482,7 @@ class CompilationEngine:
 		#if next token is ")" empty expression list and return
 		current_token = CompilationEngine.peek_current_token()
 		if current_token == ")":
-			return #empty expression list, let caller handle ")"
+			return
 			
 		CompilationEngine.format_scoped_structure("expression")()
 		CompilationEngine.current_func_nargs += 1
@@ -541,18 +515,11 @@ class CompilationEngine:
 								
 
 	def compile(self):
-		#each line is a unique symbol
-		#check if symbol is in compilation_engine_functions dictionary
-		# if it is, set tag name to the func tag name, print, call compile statement, it's return
-		# CompilationEngine.init_functions_dict()
-		# pdb.set_trace()
 		while(CompilationEngine.token_iterator < len(CompilationEngine.tokenized_xml)):
 			current_token = CompilationEngine.peek_current_token()
 			if current_token in CompilationEngine.functions:
-				#set up decorated function call with tag
 				CompilationEngine.format_scoped_structure(current_token)()
 			else:
-				#this may need to be updated with more logic to handle scenarios where scope is defined arbitrarily, may be only circumstance though
 				raise Exception("invalid syntax")
 		return CompilationEngine.compiled_xml
 
