@@ -1,17 +1,18 @@
 class Tokenizer:
 
-	keyword_list = ['class', 'constructor', 'function', 'method', 'field', 'static', 'var', 'int', 'char',
-					'boolean', 'void', 'true', 'false', 'null', 'this', 'let', 'do', 'if', 'else', 'while',
-					'return',]
+	def __init__(self):
+		self.keyword_list = ['class', 'constructor', 'function', 'method', 'field', 'static', 'var', 'int', 'char',
+						'boolean', 'void', 'true', 'false', 'null', 'this', 'let', 'do', 'if', 'else', 'while',
+						'return',]
 
 
-	symbol_list = ['{', '}', '(', ')', '[', ']', '.', ',', ';', '+', '-', '*', '/', '&', '|', '<', '>', '=', '~',]
+		self.symbol_list = ['{', '}', '(', ')', '[', ']', '.', ',', ';', '+', '-', '*', '/', '&', '|', '<', '>', '=', '~',]
 
 
-	identifier_list	= []
-	block_comment = False
-	accumulating_string_constant = False
-	reserved_XML_symbol_replacements = {'>' : '&gt;', '<' : '&lt;', '&' : '&amp;', '"' : '&quot;'}
+		self.identifier_list	= []
+		self.block_comment = False
+		self.accumulating_string_constant = False
+		self.reserved_XML_symbol_replacements = {'>' : '&gt;', '<' : '&lt;', '&' : '&amp;', '"' : '&quot;'}
 
 
 	def set_raw_code(self, raw_code):
