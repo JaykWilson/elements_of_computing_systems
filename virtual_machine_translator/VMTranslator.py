@@ -5,29 +5,29 @@ class Parser:
 
 	arithmetic_commands_template = {'add':['@SP', 'AM=M-1', 'D=M', '@SP', 'AM=M-1', 'MD=D+M', '@SP', 'M=M+1'],
 
-									'sub':[ '@SP', 'AM=M-1','D=M', '@SP', 'AM=M-1', 'MD=M-D', '@SP','M=M+1'],
+				'sub':[ '@SP', 'AM=M-1','D=M', '@SP', 'AM=M-1', 'MD=M-D', '@SP','M=M+1'],
 
-									'neg':[ '@SP', 'AM=M-1', 'D=M', '@insert_neg_temp_var', 'M=D', '@0', 'D=A',
-											'@SP', 'A=M', 'M=D', '@SP', 'M=M+1', '@insert_neg_temp_var', 'D=M',
-											'@SP', 'A=M', 'M=D', '@SP',	'M=M+1', 'insert_sub_commands',],
+				'neg':[ '@SP', 'AM=M-1', 'D=M', '@insert_neg_temp_var', 'M=D', '@0', 'D=A',
+					'@SP', 'A=M', 'M=D', '@SP', 'M=M+1', '@insert_neg_temp_var', 'D=M',
+					'@SP', 'A=M', 'M=D', '@SP',	'M=M+1', 'insert_sub_commands',],
 
-									'rel':[ 'insert_sub_commands', '@SP', 'AM=M-1', 'D=M', '@replace_relation_true',
-											'D;replace_relation_specific_jump_command', '@replace_relation_false',
-											'0;JMP', '(replace_relation_true)', '@0', 'D=A-1', '@SP', 'A=M', 'M=D',
-											'@SP', 'M=M+1', '@END', '0;JMP', '(replace_relation_false)', '@0', 'D=A',
-											'@SP', 'A=M', 'M=D', '@SP', 'M=M+1', '(END)',],
+				'rel':[ 'insert_sub_commands', '@SP', 'AM=M-1', 'D=M', '@replace_relation_true',
+					'D;replace_relation_specific_jump_command', '@replace_relation_false',
+					'0;JMP', '(replace_relation_true)', '@0', 'D=A-1', '@SP', 'A=M', 'M=D',
+					'@SP', 'M=M+1', '@END', '0;JMP', '(replace_relation_false)', '@0', 'D=A',
+					'@SP', 'A=M', 'M=D', '@SP', 'M=M+1', '(END)',],
 
-									'and':[ '@SP', 'AM=M-1', 'M=D', '@SP', 'AM=M-1', 'M=D&M', '@SP', 'M=M+1',],
+				'and':[ '@SP', 'AM=M-1', 'M=D', '@SP', 'AM=M-1', 'M=D&M', '@SP', 'M=M+1',],
 
-									'or':[ '@SP', 'AM=M-1', 'M=D', '@SP', 'AM=M-1', 'M=D|M', '@SP', 'M=M+1',],
+				'or':[ '@SP', 'AM=M-1', 'M=D', '@SP', 'AM=M-1', 'M=D|M', '@SP', 'M=M+1',],
 
-									'not':[ '@SP', 'AM=M-1', 'M=!M', '@SP', 'M=M+1',],
+				'not':[ '@SP', 'AM=M-1', 'M=!M', '@SP', 'M=M+1',],
 
-									#gt, let, eq commands handled by 'rel' above
-									'gt':'NULL',
-									'lt':'NULL',
-									'eq':'NULL',
-									}
+				#gt, let, eq commands handled by 'rel' above
+				'gt':'NULL',
+				'lt':'NULL',
+				'eq':'NULL',
+				}
 
 
 	push_data_from_address_template = ['@replace_segment_pointer', 'D=M', '@i', 'D=D+A', 'A=D', 'D=M']
