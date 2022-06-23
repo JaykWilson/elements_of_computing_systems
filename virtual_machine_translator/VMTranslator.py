@@ -40,27 +40,27 @@ class Parser:
 
 
 	pop_memory_command_template = ['@replace_segment_pointer', 'D=M', '@i', 'D=D+A', '@address', 'M=D', '@SP',
-									'AM=M-1', 'D=M', '@address', 'A=M', 'M=D']
+						'AM=M-1', 'D=M', '@address', 'A=M', 'M=D']
 
 
 	function_return_commands = [# endFrame = LCL
-					'@LCL', 'D=M', '@R13', 'M=D',
-					# retAddr = *(endFrame - 5)
-					'@5', 'D=A', '@R13', 'A=M-D', 'D=M', '@R14', 'M=D',
-					# *ARG = pop()
-					'@SP', 'AM=M-1', 'D=M', '@ARG', 'A=M', 'M=D',
-					# SP = ARG + 1
-					'@ARG', 'D=M+1', '@SP', 'M=D',
-					# THAT = *(endFrame -1)
-					'@R13', 'A=M-1', 'D=M', '@THAT', 'M=D',
-					# THIS = *(endFrame -2)
-					'@2', 'D=A', '@R13', 'A=M-D', 'D=M', '@THIS', 'M=D',
-					# ARG = *(endFrame -3)
-					'@3', 'D=A', '@R13', 'A=M-D', 'D=M', '@ARG', 'M=D',
-					# LCL = *(endFrame - 4)
-					'@4', 'D=A', '@R13', 'A=M-D', 'D=M', '@LCL', 'M=D',
-					# goto retAddr
-					'@R14', 'A=M', '0;JMP']
+				'@LCL', 'D=M', '@R13', 'M=D',
+				# retAddr = *(endFrame - 5)
+				'@5', 'D=A', '@R13', 'A=M-D', 'D=M', '@R14', 'M=D',
+				# *ARG = pop()
+				'@SP', 'AM=M-1', 'D=M', '@ARG', 'A=M', 'M=D',
+				# SP = ARG + 1
+				'@ARG', 'D=M+1', '@SP', 'M=D',
+				# THAT = *(endFrame -1)
+				'@R13', 'A=M-1', 'D=M', '@THAT', 'M=D',
+				# THIS = *(endFrame -2)
+				'@2', 'D=A', '@R13', 'A=M-D', 'D=M', '@THIS', 'M=D',
+				# ARG = *(endFrame -3)
+				'@3', 'D=A', '@R13', 'A=M-D', 'D=M', '@ARG', 'M=D',
+				# LCL = *(endFrame - 4)
+				'@4', 'D=A', '@R13', 'A=M-D', 'D=M', '@LCL', 'M=D',
+				# goto retAddr
+				'@R14', 'A=M', '0;JMP']
 
 
 	def set_raw_commands(self,raw_commands):
