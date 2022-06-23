@@ -40,7 +40,7 @@ class Parser:
 
 
 	pop_memory_command_template = ['@replace_segment_pointer', 'D=M', '@i', 'D=D+A', '@address', 'M=D', '@SP',
-						'AM=M-1', 'D=M', '@address', 'A=M', 'M=D']
+				'AM=M-1', 'D=M', '@address', 'A=M', 'M=D']
 
 
 	function_return_commands = [# endFrame = LCL
