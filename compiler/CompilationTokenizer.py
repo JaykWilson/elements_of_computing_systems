@@ -1,49 +1,11 @@
 class Tokenizer:
 
-	keyword_list = ['class', 
-					'constructor', 
-					'function', 
-					'method', 
-					'field', 
-					'static',
-					'var',
-					'int',
-					'char',
-					'boolean',
-					'void',
-					'true',
-					'false',
-					'null',
-					'this',
-					'let',
-					'do',
-					'if',
-					'else',
-					'while',
-					'return',
-					]
+	keyword_list = ['class', 'constructor', 'function', 'method', 'field', 'static', 'var', 'int', 'char',
+					'boolean', 'void', 'true', 'false', 'null', 'this', 'let', 'do', 'if', 'else', 'while',
+					'return',]
 
 
-	symbol_list = ['{',
-				   '}',
-				   '(',
-				   ')',
-				   '[',
-				   ']',
-				   '.',
-				   ',',
-				   ';',
-				   '+',
-				   '-',
-				   '*',
-				   '/',
-				   '&',
-				   '|',
-				   '<',
-				   '>',
-				   '=',
-				   '~',
-				  ]
+	symbol_list = ['{', '}', '(', ')', '[', ']', '.', ',', ';', '+', '-', '*', '/', '&', '|', '<', '>', '=', '~',]
 
 
 	identifier_list	= []
@@ -68,7 +30,6 @@ class Tokenizer:
 				for verified_token_and_type in verified_tokens_and_types:
 					verified_token = verified_token_and_type[0]
 					token_type = verified_token_and_type[1]
-					#xml_formatted_token = '\t' + '<' + token_type + '> ' + verified_token + ' </' + token_type + '>'
 					xml_formatted_token = '<' + token_type + '> ' + verified_token + ' </' + token_type + '>'
 					verified_tokens_xml.append(xml_formatted_token)
 			else:

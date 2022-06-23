@@ -61,9 +61,11 @@ class LinkedList:
 			idx = self.name.index(name)
 			return self.num[idx]
 
+
 		def get_type(self, name):
 			idx = self.name.index(name)
 			return self.symbol_type[idx]
+
 
 		def get_nargs(self):
 			return self.argument_num
