@@ -6,7 +6,7 @@ class Assembler:
 		self.bin_file = []
 		self.commands = []
 		parser = argparse.ArgumentParser()
-		parser.add_argument('--file', type=str, required=True)
+		parser.add_argument('--file', type = str, required = True)
 		args = parser.parse_args()
 		self.function_name = args.file.split(".")[:1]
 
@@ -14,61 +14,50 @@ class Assembler:
 			f = original_file.read()
 		self.assembly_file = f
 
-		self.symbol_table = {'SCREEN':16384, 
-				     'KBD':24576, 
-				     'SP':0, 
-				     'LCL':1, 
-				     'ARG':2, 
-				     'THIS':3, 
-				     'THAT':4}
+		self.symbol_table = {'SCREEN':16384, 'KBD':24576, 'SP':0, 'LCL':1, 'ARG':2, 'THIS':3, 'THAT':4}
 
-		self.dest_command_list = {'':'000',
-					  'M':'001',
-					  'D':'010',
-					  'DM':'011',
-					  'A':'100',
-					  'AM':'101',
-					  'AD':'110',
-					  'ADM':'111'}
+		self.dest_command_list = {'':'000', 'M':'001', 'D':'010', 'DM':'011', 'A':'100', 'AM':'101', 
+								'AD':'110', 'ADM':'111'}
 
 		self.comp_command_list = {'':'',
-					  '0':'0101010',
-					  '1':'0111111',
-					  '-1':'0111010',
-					  'D':'0001100',
-					  'A':'0110000',
-					  'M':'1110000',
-					  '!D':'0001101',
-					  '!A':'0110001',
-					  '!M':'1110001',
-					  '-D':'0001111',
-					  '-A':'0110011',
-					  '-M':'1110011',
-					  'D+1':'0011111',
-					  'A+1':'0110111',
-					  'M+1':'1110111',
-					  'D-1':'0001110',
-					  'A-1':'0110010',
-					  'M-1':'1110010',
-					  'D+A':'0000010',
-					  'D+M':'1000010',
-					  'D-A':'0010011',
-					  'D-M':'1010011',
-					  'A-D':'0000111',
-					  'M-D':'1000111',
-					  'D&A':'0000000',
-					  'D&M':'1000000',
-					  'D|A':'0010101',
-					  'D|M':'1010101'}
+								'0':'0101010',
+								'1':'0111111',
+								'-1':'0111010',
+								'D':'0001100',
+								'A':'0110000',
+								'M':'1110000',
+								'!D':'0001101',
+								'!A':'0110001',
+								'!M':'1110001',
+								'-D':'0001111',
+								'-A':'0110011',
+								'-M':'1110011',
+								'D+1':'0011111',
+								'A+1':'0110111',
+								'M+1':'1110111',
+								'D-1':'0001110',
+								'A-1':'0110010',
+								'M-1':'1110010',
+								'D+A':'0000010',
+								'D+M':'1000010',
+								'D-A':'0010011',
+								'D-M':'1010011',
+								'A-D':'0000111',
+								'M-D':'1000111',
+								'D&A':'0000000',
+								'D&M':'1000000',
+								'D|A':'0010101',
+								'D|M':'1010101'}
 
 		self.jump_command_list = {'':'000',
-					  'JGT':'001',
-					  'JEQ':'010',
-					  'JGE':'011',
-					  'JLT':'100',
-					  'JNE':'101',
-					  'JLE':'110',
-					  'JMP':'111'}
+								'JGT':'001',
+								'JEQ':'010',
+								'JGE':'011',
+								'JLT':'100',
+								'JNE':'101',
+								'JLE':'110',
+								'JMP':'111'}
+
 
 		for i in range(16):
 			temp = "R" + str(i)
@@ -176,7 +165,7 @@ class Assembler:
 				f.write(line)
 				f.write("\n")
 
-#MAIN CODE
+
 hackAssembler = Assembler()
 hackAssembler.tokenize()
 hackAssembler.parse_possible_variables_and_labels()
