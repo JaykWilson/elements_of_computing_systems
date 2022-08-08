@@ -1,0 +1,123 @@
+// This file is part of www.nand2tetris.org
+// and the book "The Elements of Computing Systems"
+// by Nisan and Schocken, MIT Press.
+// File name: projects/05/CPU.hdl
+
+/**
+ * The Hack CPU (Central Processing unit), consisting of an ALU,
+ * two registers named A and D, and a program counter named PC.
+ * The CPU is designed to fetch and execute instructions written in 
+ * the Hack machine language. In particular, functions as follows:
+ * Executes the inputted instruction according to the Hack machine 
+ * language specification. The D and A in the language specification
+ * refer to CPU-resident registers, while M refers to the external
+ * memory location addressed by A, i.e. to Memory[A]. The inM input 
+ * holds the value of this location. If the current instruction needs 
+ * to write a value to M, the value is placed in outM, the address 
+ * of the target location is placed in the addressM output, and the 
+ * writeM control bit is asserted. (When writeM==0, any value may 
+ * appear in outM). The outM and writeM outputs are combinational: 
+ * they are affected instantaneously by the execution of the current 
+ * instruction. The addressM and pc outputs are clocked: although they 
+ * are affected by the execution of the current instruction, they commit 
+ * to their new values only in the next time step. If reset==1 then the 
+ * CPU jumps to address 0 (i.e. pc is set to 0 in next time step) rather 
+ * than to the address resulting from executing the current instruction. 
+ */
+
+CHIP CPU {
+
+    IN  inM[16],         // M value input  (M = contents of RAM[A])
+        instruction[16], // Instruction for execution
+        reset;           // Signals whether to re-start the current
+                         // program (reset==1) or continue executing
+                         // the current program (reset==0).
+
+    OUT outM[16],        // M value output
+        writeM,          // Write to M? 
+        addressM[15],    // Address in data memory (of M)
+        pc[15];          // address of next instruction
+
+    PARTS:
+
+    //Mux for instruction or alu output
+    Mux16(b=aluout,a=instruction[0..15],sel=instruction[15],out=mux1);
+
+    //A Register
+    Not(in=instruction[15],out=notAInstr);
+    Or(a=instruction[5],b=notAInstr,out=x);
+    ARegister(in=mux1,load=x,out=aregout,out[0..14]=addressM[0..14]);
+
+    //D Register
+    And(a=instruction[4],b=instruction[15],out=dload);
+    DRegister(in=aluout,load=dload,out=dregout);
+
+    //Mux for A or M
+    Mux16(a=aregout,b=inM[0..15],sel=instruction[12],out=mux2);
+
+    ALU(x=dregout,y=mux2,zx=instruction[11],nx=instruction[10],zy=instruction[9],ny=instruction[8],f=instruction[7],no=instruction[6],zr=zr,ng=ng,out=aluout,out=outM[0..15]);
+
+    //writeM
+    And(a=instruction[3],b=instruction[15],out=writeM);
+
+
+    //________PC load logic circuit___________
+
+    //Create negated path for all instructions
+    Not(in=instruction[0],out=notInstr0);
+    Not(in=instruction[1],out=notInstr1);
+    Not(in=instruction[2],out=notInstr2);
+
+    //Create negated path for ng(negative) and zr(zero) for PC load circuit logic
+    Not(in=ng,out=notng);
+    Not(in=zr,out=notzr);
+
+    //JGT
+    And(a=instruction[0],b=notInstr1,out=jgtpath1);
+    And(a=notInstr2,b=notzr,out=jgtpath2);
+    And(a=jgtpath1,b=jgtpath2,out=jgtpath3);
+    And(a=jgtpath3,b=notng,out=jgt);
+
+    //JEQ
+    And(a=notInstr2,b=instruction[1],out=jeqpath1);
+    And(a=notInstr0,b=jeqpath1,out=jeqpath2);
+    And(a=jeqpath2,b=zr,out=jeq);
+
+    //JGE
+    And(a=notInstr2,b=instruction[1],out=jgepath1);
+    And(a=jgepath1,b=instruction[0],out=jgepath2);
+    And(a=jgepath2,b=notng,out=jgepath3);
+    And(a=jgepath2,b=zr,out=jgepath4);
+    Or(a=jgepath3,b=jgepath4,out=jge);
+
+    //JLT
+    And(a=instruction[2],b=notInstr1,out=jltpath1);
+    And(a=jltpath1,b=notInstr0,out=jltpath2);
+    And(a=jltpath2,b=ng,out=jlt);
+
+    //JNE
+    And(a=instruction[2],b=notInstr1,out=jnepath1);
+    And(a=jnepath1,b=instruction[0],out=jnepath2);
+    And(a=jnepath2,b=notzr,out=jne);
+
+    //JLE
+    And(a=instruction[2],b=instruction[1],out=jlepath1);
+    And(a=jlepath1,b=notInstr0,out=jlepath2);
+    And(a=jlepath2,b=ng,out=jlepath3);
+    And(a=jlepath2,b=zr,out=jlepath4);
+    Or(a=jlepath3,b=jlepath4,out=jle);
+
+    //JMP
+    And(a=instruction[2],b=instruction[1],out=jmppath1);
+    And(a=jmppath1,b=instruction[0],out=jmppath2);
+    And(a=jmppath2,b=instruction[15],out=jmp);
+
+    //Or all jump signals, block jump on A instructions
+    Or8Way(in[0]=jgt,in[1]=jeq,in[2]=jge,in[3]=jlt,in[4]=jne,in[5]=jle,in[6]=jmp,in[7]=false,out=orJmp);
+    And(a=orJmp,b=instruction[15],out=jump);
+
+    Not(in=jump,out=notjump);
+
+    PC(in=aregout,inc=notjump,load=jump,reset=reset,out[0..14]=pc[0..14]);
+    //_______________end PC______________________
+}
